@@ -1,6 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
-import { Award, BookOpen, Layers } from 'lucide-react';
+
+// URL logo SAPIe — gambar disimpan dalam folder public/
+const SAPIE_LOGO_URL = './sapie-logo.png';
 
 interface PBSLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -15,10 +17,10 @@ export const PBSLogo: React.FC<PBSLogoProps> = ({
   showSubtitle = true,
   className = '',
 }) => {
-  const iconSizes = {
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
+  const logoSizes = {
+    sm: 'h-8 w-8',
+    md: 'h-10 w-10',
+    lg: 'h-16 w-16',
   };
 
   const textSizes = {
@@ -29,21 +31,16 @@ export const PBSLogo: React.FC<PBSLogoProps> = ({
 
   return (
     <div className={clsx('flex items-center gap-3 select-none', className)}>
-      {/* Emblem Placeholder / Shield */}
-      <div
-        className={clsx(
-          'relative flex items-center justify-center rounded-xl font-bold shadow-sm shrink-0 border',
-          iconSizes[size],
-          variant === 'dark'
-            ? 'bg-navy-800 text-white border-navy-700'
-            : 'bg-white text-navy-900 border-navy-100 shadow-sm'
-        )}
-      >
-        <div className="flex flex-col items-center justify-center leading-none">
-          <span className="text-[10px] tracking-tighter font-black text-amber-500">PBS</span>
-          <span className="text-[7px] tracking-widest font-semibold opacity-80">eP</span>
-        </div>
-      </div>
+      {/* Logo SAPIe */}
+      <img
+        src={SAPIE_LOGO_URL}
+        alt="Logo SAPIe"
+        className={clsx('object-contain shrink-0', logoSizes[size])}
+        onError={(e) => {
+          const target = e.currentTarget;
+          target.style.display = 'none';
+        }}
+      />
 
       {/* Typography */}
       <div className="leading-tight">
@@ -57,7 +54,7 @@ export const PBSLogo: React.FC<PBSLogoProps> = ({
           >
             SAPIe
           </span>
-          <span className="text-[10px] px-1.5 py-0.2 font-semibold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 border border-amber-500/30">
+          <span className="text-[10px] px-1.5 py-0.5 font-semibold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 border border-amber-500/30">
             PBS
           </span>
         </div>
