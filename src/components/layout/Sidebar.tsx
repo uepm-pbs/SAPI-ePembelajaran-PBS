@@ -43,7 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     navigate('/login');
   };
 
-  // 12 Required Navigation Items with RBAC visibility filtering
   const navigationItems = [
     {
       label: 'Dashboard Utama',
@@ -113,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const filteredItems = navigationItems.filter(item => 
+  const filteredItems = navigationItems.filter(item =>
     !role || item.roles.includes(role)
   );
 
@@ -141,7 +140,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <PBSLogo size="sm" variant="dark" />
           ) : (
             <div className="w-full flex justify-center">
-              <span className="font-extrabold text-amber-400 text-lg">SAPIe</span>
+              <img
+                src="./sapie-logo.png"
+                alt="SAPIe"
+                className="h-9 w-9 object-contain"
+              />
             </div>
           )}
 
