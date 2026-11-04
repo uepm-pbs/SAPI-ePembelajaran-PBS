@@ -48,43 +48,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Dashboard Utama',
       to: '/dashboard',
       icon: LayoutDashboard,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Arkib Produk',
       to: '/arkib-produk',
       icon: Archive,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Pendaftaran Produk',
       to: '/pendaftaran-produk',
       icon: FilePlus,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pensyarah'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah'],
     },
     {
       label: 'Pencapaian & Anugerah',
       to: '/pencapaian',
       icon: Trophy,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Pengurusan Laporan',
       to: '/laporan',
       icon: FileText,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pengurusan'],
     },
     {
       label: 'Dokumen Arkib',
       to: '/dokumen',
       icon: FolderArchive,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Analitik & Statistik',
       to: '/analitik',
       icon: BarChart3,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pengurusan'],
     },
     {
       label: 'Pengurusan Pengguna',
@@ -102,13 +102,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Log Aktiviti',
       to: '/audit-log',
       icon: History,
-      roles: ['super_admin', 'pentadbir_uepm'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah'],
     },
     {
       label: 'Profil Saya',
       to: '/profil',
       icon: UserCircle,
-      roles: ['super_admin', 'pentadbir_uepm', 'pegawai_jabatan', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
   ];
 
@@ -118,7 +118,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-navy-950/60 lg:hidden backdrop-blur-xs"
@@ -126,7 +125,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
       <aside
         className={clsx(
           'fixed top-0 bottom-0 left-0 z-40 bg-navy-800 text-white flex flex-col transition-all duration-300 ease-in-out shadow-xl border-r border-navy-700',
@@ -157,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* User Card (When expanded) */}
+        {/* User Card */}
         {!collapsed && user && (
           <div className="px-4 py-3 mx-3 my-2.5 rounded-xl bg-navy-900/60 border border-navy-700/60">
             <div className="flex items-center gap-2.5">
