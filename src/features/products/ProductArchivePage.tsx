@@ -267,9 +267,9 @@ export const ProductArchivePage: React.FC = () => {
                   className="input-base text-xs py-1.5"
                 >
                   <option value="SEMUA">Semua Tahun</option>
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
+{Array.from({ length: 2050 - 2018 + 1 }, (_, i) => 2050 - i).map((yr) => (
+  <option key={yr} value={yr}>{yr}</option>
+))}
                 </select>
               </div>
 
