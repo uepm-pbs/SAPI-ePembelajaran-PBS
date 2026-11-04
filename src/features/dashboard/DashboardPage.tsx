@@ -45,14 +45,12 @@ export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Dashboard Filters
   const [selectedYear, setSelectedYear] = useState<number | 'SEMUA'>('SEMUA');
   const [selectedDept, setSelectedDept] = useState<string>('SEMUA');
 
   const settings = dbService.getSystemSettings();
   const departments = settings.departments || [];
 
-  // Compute metrics with filters
   const stats = useMemo(() => {
     return dbService.getDashboardStats({
       year: selectedYear === 'SEMUA' ? undefined : selectedYear,
@@ -60,7 +58,6 @@ export const DashboardPage: React.FC = () => {
     });
   }, [selectedYear, selectedDept]);
 
-  // Products for charts
   const allProducts = useMemo(() => {
     return dbService.getProducts({
       year: selectedYear === 'SEMUA' ? undefined : selectedYear,
@@ -68,7 +65,6 @@ export const DashboardPage: React.FC = () => {
     });
   }, [selectedYear, selectedDept]);
 
-  // Achievements for charts
   const allAchievements = useMemo(() => {
     return dbService.getAchievements({
       year: selectedYear === 'SEMUA' ? undefined : selectedYear,
@@ -76,12 +72,10 @@ export const DashboardPage: React.FC = () => {
     });
   }, [selectedYear, selectedDept]);
 
-  // Recent audit logs
   const recentLogs = useMemo(() => {
     return dbService.getAuditLogs().slice(0, 7);
   }, []);
 
-  // Actionable items
   const pendingApprovals = useMemo(() => {
     return dbService.getProducts({ status: 'Dihantar untuk Semakan' });
   }, []);
@@ -94,7 +88,6 @@ export const DashboardPage: React.FC = () => {
     return dbService.getAchievements({ status: 'Dalam Semakan' });
   }, []);
 
-  // Chart Data: Registrations by Department
   const deptChartData = useMemo(() => {
     const counts: Record<string, number> = {};
     departments.forEach(d => { counts[d.code] = 0; });
@@ -104,7 +97,6 @@ export const DashboardPage: React.FC = () => {
     return Object.entries(counts).map(([name, count]) => ({ name, count }));
   }, [allProducts, departments]);
 
-  // Chart Data: Status Distribution
   const statusChartData = useMemo(() => {
     const counts: Record<string, number> = {};
     allProducts.forEach(p => {
@@ -113,7 +105,6 @@ export const DashboardPage: React.FC = () => {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [allProducts]);
 
-  // Chart Data: Achievements by Recognition Level
   const levelChartData = useMemo(() => {
     const counts: Record<string, number> = {};
     allAchievements.filter(a => a.verificationStatus === 'Disahkan').forEach(a => {
@@ -124,11 +115,31 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Hero Banner dengan Logo */}
+      <div className="flex flex-col sm:flex-row items-center gap-5 bg-gradient-to-r from-navy-900 via-navy-800 to-navy-700 rounded-2xl px-6 py-5 shadow-lg mb-2">
+        <img
+          src="./sapie-logo.png"
+          alt="Logo SAPIe"
+          className="h-20 w-20 object-contain shrink-0 drop-shadow-lg"
+        />
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl font-extrabold text-white tracking-tight leading-tight">
+            Sistem Arkib Produk Inovasi ePembelajaran
+          </h1>
+          <p className="text-sm text-navy-200 mt-1 font-semibold tracking-wide">
+            SAPIe &mdash; Politeknik Banting Selangor
+          </p>
+          <p className="text-xs text-navy-300 mt-0.5">
+            Repositori Digital Berpusat Inovasi Pembelajaran PBS
+          </p>
+        </div>
+      </div>
+
       {/* Top Banner / Welcome & Filters */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy-900 tracking-tight">
-            Dashboard Utama SAPIe
+          <h1 className="text-xl font-extrabold text-navy-900 tracking-tight">
+            Dashboard Utama
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Arkib Digital Produk Inovasi ePembelajaran Politeknik Banting Selangor
@@ -145,10 +156,9 @@ export const DashboardPage: React.FC = () => {
               className="text-xs font-semibold text-gray-700 bg-transparent focus:outline-none cursor-pointer"
             >
               <option value="SEMUA">Semua Tahun</option>
-{Array.from({ length: 2050 - 2018 + 1 }, (_, i) => 2050 - i).map((yr) => (
-  <option key={yr} value={yr}>Tahun {yr}</option>
-))}
-
+              {Array.from({ length: 2050 - 2018 + 1 }, (_, i) => 2050 - i).map((yr) => (
+                <option key={yr} value={yr}>Tahun {yr}</option>
+              ))}
             </select>
           </div>
 
@@ -181,12 +191,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* 8 Primary Summary Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Products */}
-        <Card
-          hoverable
-          onClick={() => navigate('/arkib-produk')}
-          className="border-l-4 border-l-navy-800"
-        >
+        <Card hoverable onClick={() => navigate('/arkib-produk')} className="border-l-4 border-l-navy-800">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jumlah Produk Berdaftar</p>
@@ -199,12 +204,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 2: Approved Products */}
-        <Card
-          hoverable
-          onClick={() => navigate('/arkib-produk?status=Diluluskan')}
-          className="border-l-4 border-l-emerald-600"
-        >
+        <Card hoverable onClick={() => navigate('/arkib-produk?status=Diluluskan')} className="border-l-4 border-l-emerald-600">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Produk Diluluskan</p>
@@ -217,12 +217,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 3: In Review */}
-        <Card
-          hoverable
-          onClick={() => navigate('/pendaftaran-produk?status=Dalam Semakan')}
-          className="border-l-4 border-l-amber-500"
-        >
+        <Card hoverable onClick={() => navigate('/pendaftaran-produk?status=Dalam Semakan')} className="border-l-4 border-l-amber-500">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dalam Semakan</p>
@@ -235,17 +230,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 4: In Development */}
-        <Card
-          hoverable
-          onClick={() => navigate('/arkib-produk')}
-          className="border-l-4 border-l-blue-600"
-        >
+        <Card hoverable onClick={() => navigate('/arkib-produk')} className="border-l-4 border-l-blue-600">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dalam Pembangunan</p>
               <h3 className="text-2xl font-black text-blue-800 mt-1">{stats.inDevelopmentProducts}</h3>
-              <p className="text-[11px] text-blue-600 mt-0.5">Prototaip & ujian</p>
+              <p className="text-[11px] text-blue-600 mt-0.5">Prototaip &amp; ujian</p>
             </div>
             <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
               <Hammer className="w-5 h-5" />
@@ -253,19 +243,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 5: Achievements (Verified vs distinct) */}
-        <Card
-          hoverable
-          onClick={() => navigate('/pencapaian')}
-          className="border-l-4 border-l-amber-600"
-        >
+        <Card hoverable onClick={() => navigate('/pencapaian')} className="border-l-4 border-l-amber-600">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jumlah Pencapaian</p>
               <h3 className="text-2xl font-black text-amber-900 mt-1">{stats.totalAchievements}</h3>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                {stats.distinctProductsWithAchievements} produk beranugerah
-              </p>
+              <p className="text-[11px] text-gray-500 mt-0.5">{stats.distinctProductsWithAchievements} produk beranugerah</p>
             </div>
             <div className="h-11 w-11 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0">
               <Trophy className="w-5 h-5" />
@@ -273,17 +256,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 6: Archive Documents */}
-        <Card
-          hoverable
-          onClick={() => navigate('/dokumen')}
-          className="border-l-4 border-l-slate-700"
-        >
+        <Card hoverable onClick={() => navigate('/dokumen')} className="border-l-4 border-l-slate-700">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dokumen Arkib</p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">{stats.totalDocuments}</h3>
-              <p className="text-[11px] text-gray-400 mt-0.5">Manual, laporan & sijil</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">Manual, laporan &amp; sijil</p>
             </div>
             <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
               <FolderArchive className="w-5 h-5" />
@@ -291,12 +269,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 7: Departments Involved */}
-        <Card
-          hoverable
-          onClick={() => navigate('/arkib-produk')}
-          className="border-l-4 border-l-navy-600"
-        >
+        <Card hoverable onClick={() => navigate('/arkib-produk')} className="border-l-4 border-l-navy-600">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jabatan Terlibat</p>
@@ -309,12 +282,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 8: Product Creators */}
-        <Card
-          hoverable
-          onClick={() => navigate('/pengguna')}
-          className="border-l-4 border-l-purple-600"
-        >
+        <Card hoverable onClick={() => navigate('/pengguna')} className="border-l-4 border-l-purple-600">
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bil. Pencipta Produk</p>
@@ -328,7 +296,7 @@ export const DashboardPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Actionable Tasks (Tindakan Diperlukan) */}
+      {/* Actionable Tasks */}
       {(pendingApprovals.length > 0 || returnedCorrections.length > 0 || pendingAchievements.length > 0) && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -337,13 +305,9 @@ export const DashboardPage: React.FC = () => {
               Tindakan Diperlukan ({pendingApprovals.length + returnedCorrections.length + pendingAchievements.length})
             </h3>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {pendingApprovals.length > 0 && (
-              <div
-                onClick={() => navigate('/arkib-produk?status=Dihantar untuk Semakan')}
-                className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 transition-all cursor-pointer shadow-xs"
-              >
+              <div onClick={() => navigate('/arkib-produk?status=Dihantar untuk Semakan')} className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 transition-all cursor-pointer shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-800">Pendaftaran Baru Menunggu Kelulusan</span>
                   <Badge variant="warning">{pendingApprovals.length}</Badge>
@@ -351,12 +315,8 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-[11px] text-gray-500 mt-1">Perlu disemak oleh Pentadbir UePM</p>
               </div>
             )}
-
             {returnedCorrections.length > 0 && (
-              <div
-                onClick={() => navigate('/pendaftaran-produk?status=Memerlukan Pembetulan')}
-                className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 transition-all cursor-pointer shadow-xs"
-              >
+              <div onClick={() => navigate('/pendaftaran-produk?status=Memerlukan Pembetulan')} className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 transition-all cursor-pointer shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-800">Produk Memerlukan Pembetulan</span>
                   <Badge variant="danger">{returnedCorrections.length}</Badge>
@@ -364,31 +324,23 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-[11px] text-gray-500 mt-1">Menunggu kemas kini daripada pencipta</p>
               </div>
             )}
-
             {pendingAchievements.length > 0 && (
-              <div
-                onClick={() => navigate('/pencapaian?status=Dalam Semakan')}
-                className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 transition-all cursor-pointer shadow-xs"
-              >
+              <div onClick={() => navigate('/pencapaian?status=Dalam Semakan')} className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 transition-all cursor-pointer shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-800">Pencapaian Menunggu Pengesahan</span>
                   <Badge variant="info">{pendingAchievements.length}</Badge>
                 </div>
-                <p className="text-[11px] text-gray-500 mt-1">Sijil & bukti menanti semakan rasmi</p>
+                <p className="text-[11px] text-gray-500 mt-1">Sijil &amp; bukti menanti semakan rasmi</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Analytics Charts Section */}
+      {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart A: Produk Mengikut Jabatan */}
         <Card>
-          <CardHeader
-            title="Taburan Produk Inovasi Mengikut Jabatan"
-            subtitle="Bilangan produk berdaftar merentasi jabatan akademik PBS"
-          />
+          <CardHeader title="Taburan Produk Inovasi Mengikut Jabatan" subtitle="Bilangan produk berdaftar merentasi jabatan akademik PBS" />
           <CardBody>
             {deptChartData.some(d => d.count > 0) ? (
               <div className="h-64">
@@ -397,114 +349,62 @@ export const DashboardPage: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip
-                      formatter={(val: number) => [`${val} Produk`, 'Jumlah']}
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px' }}
-                    />
+                    <Tooltip formatter={(val: number) => [`${val} Produk`, 'Jumlah']} contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px' }} />
                     <Bar dataKey="count" fill="#163A5F" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState
-                title="Tiada Rekod Produk"
-                description="Tiada data produk inovasi bagi tahun atau jabatan yang dipilih."
-              />
+              <EmptyState title="Tiada Rekod Produk" description="Tiada data produk inovasi bagi tahun atau jabatan yang dipilih." />
             )}
           </CardBody>
         </Card>
 
-        {/* Chart B: Status Pendaftaran Produk */}
         <Card>
-          <CardHeader
-            title="Pecahan Status Pendaftaran Produk"
-            subtitle="Nisbah status aliran kerja dalam sistem arkib"
-          />
+          <CardHeader title="Pecahan Status Pendaftaran Produk" subtitle="Nisbah status aliran kerja dalam sistem arkib" />
           <CardBody>
             {statusChartData.length > 0 ? (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={statusChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={85}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
+                    <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4} dataKey="value">
                       {statusChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(val: number) => [`${val} Produk`, 'Jumlah']}
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px' }}
-                    />
+                    <Tooltip formatter={(val: number) => [`${val} Produk`, 'Jumlah']} contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px' }} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState
-                title="Tiada Data Status"
-                description="Daftar produk inovasi baharu untuk melihat pecahan status aliran kerja."
-              />
+              <EmptyState title="Tiada Data Status" description="Daftar produk inovasi baharu untuk melihat pecahan status aliran kerja." />
             )}
           </CardBody>
         </Card>
       </div>
 
-      {/* Bottom Section: Recent Activity & Latest Products */}
+      {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Products */}
         <Card>
-          <CardHeader
-            title="Produk Inovasi Terkini"
-            subtitle="Pendaftaran produk paling akhir dalam sistem SAPIe"
-            action={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/arkib-produk')}
-                icon={<ArrowRight className="w-3.5 h-3.5" />}
-              >
-                Semua Arkib
-              </Button>
-            }
-          />
+          <CardHeader title="Produk Inovasi Terkini" subtitle="Pendaftaran produk paling akhir dalam sistem SAPIe" action={<Button variant="ghost" size="sm" onClick={() => navigate('/arkib-produk')} icon={<ArrowRight className="w-3.5 h-3.5" />}>Semua Arkib</Button>} />
           <CardBody className="p-0">
             {allProducts.length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  title="Arkib Masih Kosong"
-                  description="Belum ada produk inovasi yang didaftarkan. Gunakan butang di atas untuk menambah data atau mengisi data sintetik ujian."
-                />
-              </div>
+              <div className="p-6"><EmptyState title="Arkib Masih Kosong" description="Belum ada produk inovasi yang didaftarkan." /></div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {allProducts.slice(0, 5).map((p) => (
-                  <div
-                    key={p.productId}
-                    onClick={() => navigate(`/arkib-produk/${p.productId}`)}
-                    className="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer flex items-center justify-between gap-3"
-                  >
+                  <div key={p.productId} onClick={() => navigate(`/arkib-produk/${p.productId}`)} className="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono font-bold text-navy-800">{p.archiveCode}</span>
                         <RegistrationStatusBadge status={p.registrationStatus} />
                       </div>
                       <h4 className="text-sm font-semibold text-gray-900 truncate mt-1">{p.title}</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {p.departmentName || p.departmentId} • {p.primaryCreatorName} • Thn {p.developmentYear}
-                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{p.departmentName || p.departmentId} &bull; {p.primaryCreatorName} &bull; Thn {p.developmentYear}</p>
                     </div>
-
                     <div className="shrink-0 text-right">
-                      <span className="text-[11px] font-medium text-gray-400">
-                        {formatDateMs(p.createdAt)}
-                      </span>
+                      <span className="text-[11px] font-medium text-gray-400">{formatDateMs(p.createdAt)}</span>
                     </div>
                   </div>
                 ))}
@@ -513,30 +413,11 @@ export const DashboardPage: React.FC = () => {
           </CardBody>
         </Card>
 
-        {/* Recent Audit Activities */}
         <Card>
-          <CardHeader
-            title="Log Aktiviti Terkini (Audit Trail)"
-            subtitle="Rekod tindakan dan transaksi rasmi pengguna"
-            action={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/audit-log')}
-                icon={<ArrowRight className="w-3.5 h-3.5" />}
-              >
-                Semua Log
-              </Button>
-            }
-          />
+          <CardHeader title="Log Aktiviti Terkini (Audit Trail)" subtitle="Rekod tindakan dan transaksi rasmi pengguna" action={<Button variant="ghost" size="sm" onClick={() => navigate('/audit-log')} icon={<ArrowRight className="w-3.5 h-3.5" />}>Semua Log</Button>} />
           <CardBody className="p-0">
             {recentLogs.length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  title="Tiada Log Aktiviti"
-                  description="Aktiviti pendaftaran, kelulusan dan muat naik akan direkodkan di sini secara automatik."
-                />
-              </div>
+              <div className="p-6"><EmptyState title="Tiada Log Aktiviti" description="Aktiviti pendaftaran, kelulusan dan muat naik akan direkodkan di sini secara automatik." /></div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {recentLogs.map((log) => (
@@ -547,9 +428,7 @@ export const DashboardPage: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-semibold text-gray-900">{log.actorName}</span>
-                        <span className="text-[10px] text-gray-400 shrink-0">
-                          {formatRelativeTimeMs(log.timestamp)}
-                        </span>
+                        <span className="text-[10px] text-gray-400 shrink-0">{formatRelativeTimeMs(log.timestamp)}</span>
                       </div>
                       <p className="text-gray-600 mt-0.5">{log.details}</p>
                     </div>
