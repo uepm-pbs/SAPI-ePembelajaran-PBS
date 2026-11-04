@@ -145,9 +145,10 @@ export const DashboardPage: React.FC = () => {
               className="text-xs font-semibold text-gray-700 bg-transparent focus:outline-none cursor-pointer"
             >
               <option value="SEMUA">Semua Tahun</option>
-              <option value="2026">Tahun 2026</option>
-              <option value="2025">Tahun 2025</option>
-              <option value="2024">Tahun 2024</option>
+{Array.from({ length: 2050 - 2018 + 1 }, (_, i) => 2050 - i).map((yr) => (
+  <option key={yr} value={yr}>Tahun {yr}</option>
+))}
+
             </select>
           </div>
 
