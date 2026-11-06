@@ -188,7 +188,33 @@ export const ProductRegistrationPage: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+  const handleFormError = (errors: Record<string, any>) => {
+    const sectionAFields = ['title', 'summary', 'description', 'objectives', 'problemStatement'];
+    const sectionBFields = ['departmentId', 'program', 'courseName', 'targetAudience', 'pedagogicalMethod'];
+    const sectionCFields = ['categoryId', 'technologies'];
+    const sectionDFields = ['primaryCreatorName', 'primaryCreatorEmail'];
+    const sectionEFields = ['developmentYear', 'version', 'developmentStatus'];
+    const errorFields = Object.keys(errors);
 
+    if (errorFields.some(f => sectionAFields.includes(f))) {
+      setActiveSection('A');
+      setServerError('Sila lengkapkan Bahagian A: Maklumat Asas Produk sebelum menghantar.');
+    } else if (errorFields.some(f => sectionBFields.includes(f))) {
+      setActiveSection('B');
+      setServerError('Sila lengkapkan Bahagian B: Maklumat Akademik sebelum menghantar.');
+    } else if (errorFields.some(f => sectionCFields.includes(f))) {
+      setActiveSection('C');
+      setServerError('Sila lengkapkan Bahagian C: Kategori & Teknologi sebelum menghantar.');
+    } else if (errorFields.some(f => sectionDFields.includes(f))) {
+      setActiveSection('D');
+      setServerError('Sila lengkapkan Bahagian D: Maklumat Pencipta sebelum menghantar.');
+    } else if (errorFields.some(f => sectionEFields.includes(f))) {
+      setActiveSection('E');
+      setServerError('Sila lengkapkan Bahagian E: Maklumat Pembangunan sebelum menghantar.');
+    } else {
+      setServerError('Sila lengkapkan semua maklumat yang diperlukan sebelum menghantar.');
+    }
+  };
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <PageHeader
@@ -806,7 +832,7 @@ export const ProductRegistrationPage: React.FC = () => {
                   type="button"
                   variant="secondary"
                   loading={isSubmitting}
-                  onClick={handleSubmit((data) => onSubmitForm(data, true))}
+                                    onClick={handleSubmit((data) => onSubmitForm(data, true), handleFormError)}
                   icon={<Save className="w-4 h-4" />}
                 >
                   Simpan Draf
@@ -815,7 +841,7 @@ export const ProductRegistrationPage: React.FC = () => {
                   type="button"
                   variant="primary"
                   loading={isSubmitting}
-                  onClick={handleSubmit((data) => onSubmitForm(data, false))}
+                                   onClick={handleSubmit((data) => onSubmitForm(data, false), handleFormError)}
                   icon={<Send className="w-4 h-4" />}
                 >
                   Hantar untuk Semakan
