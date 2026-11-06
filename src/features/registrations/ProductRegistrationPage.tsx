@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Save,
   Send,
-  AlertCircle,
   Plus,
   Trash2,
   FileCheck,
@@ -14,8 +13,8 @@ import {
   Layers,
   Users,
   Calendar,
-  CheckCircle2,
   ArrowLeft,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { dbService } from '../../services/storage/databaseService';
@@ -50,6 +49,7 @@ export const ProductRegistrationPage: React.FC = () => {
     formState: { errors },
   } = useForm<ProductRegistrationFormData>({
     resolver: zodResolver(productRegistrationSchema),
+    mode: 'onChange',
     defaultValues: {
       title: '',
       summary: '',
@@ -122,8 +122,17 @@ export const ProductRegistrationPage: React.FC = () => {
     }
   }, [productId, setValue]);
 
-  // Watch title for duplicate detection
-  const watchedTitle = watch('title');
+  // Watch fields for live character count & duplicate detection
+  const watchedTitle = watch('title') || '';
+  const watchedSummary = watch('summary') || '';
+  const watchedDescription = watch('description') || '';
+  const watchedObjectives = watch('objectives') || '';
+  const watchedProblemStatement = watch('problemStatement') || '';
+  const watchedProgram = watch('program') || '';
+  const watchedCourseName = watch('courseName') || '';
+  const watchedTargetAudience = watch('targetAudience') || '';
+  const watchedPedagogicalMethod = watch('pedagogicalMethod') || '';
+
   useEffect(() => {
     if (watchedTitle && watchedTitle.length > 5) {
       const dup = dbService.checkPotentialDuplicate(watchedTitle, productId);
@@ -149,6 +158,35 @@ export const ProductRegistrationPage: React.FC = () => {
     setValue('technologies', current, { shouldValidate: true });
   };
 
+  // Navigate to the first section that has validation errors
+  const handleValidationErrors = (formErrors: FieldErrors<ProductRegistrationFormData>) => {
+    const sectionA = ['title', 'summary', 'description', 'objectives', 'problemStatement', 'thumbnailUrl'];
+    const sectionB = ['departmentId', 'program', 'courseCode', 'courseName', 'semester', 'targetAudience', 'pedagogicalMethod'];
+    const sectionC = ['categoryId', 'technologies', 'tags'];
+    const sectionD = ['primaryCreatorName', 'primaryCreatorEmail', 'primaryCreatorStaffId', 'teamMembers'];
+    const sectionE = ['developmentYear', 'developmentStatus', 'version', 'productUrl', 'demoUrl'];
+
+    const errorKeys = Object.keys(formErrors);
+    if (errorKeys.some((k) => sectionA.includes(k))) {
+      setActiveSection('A');
+      setServerError('Sila lengkapkan ruangan bertanda (*) di Bahagian A: Maklumat Asas.');
+    } else if (errorKeys.some((k) => sectionB.includes(k))) {
+      setActiveSection('B');
+      setServerError('Sila lengkapkan ruangan bertanda (*) di Bahagian B: Maklumat Akademik.');
+    } else if (errorKeys.some((k) => sectionC.includes(k))) {
+      setActiveSection('C');
+      setServerError('Sila pilih Kategori dan Teknologi di Bahagian C.');
+    } else if (errorKeys.some((k) => sectionD.includes(k))) {
+      setActiveSection('D');
+      setServerError('Sila semak maklumat Pencipta & Pasukan di Bahagian D.');
+    } else if (errorKeys.some((k) => sectionE.includes(k))) {
+      setActiveSection('E');
+      setServerError('Sila semak maklumat Pembangunan di Bahagian E.');
+    } else {
+      setServerError('Terdapat maklumat wajib yang belum lengkap. Sila semak semula borang.');
+    }
+  };
+
   const onSubmitForm = async (data: ProductRegistrationFormData, isDraft: boolean) => {
     if (!user) return;
     setIsSubmitting(true);
@@ -156,7 +194,6 @@ export const ProductRegistrationPage: React.FC = () => {
 
     try {
       if (isEditMode && productId) {
-        // Update existing record
         dbService.updateProduct(
           productId,
           {
@@ -168,7 +205,6 @@ export const ProductRegistrationPage: React.FC = () => {
         );
         navigate(`/arkib-produk/${productId}`);
       } else {
-        // Create new record
         const newProd = dbService.createProduct(
           {
             ...data,
@@ -188,33 +224,22 @@ export const ProductRegistrationPage: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-  const handleFormError = (errors: Record<string, any>) => {
-    const sectionAFields = ['title', 'summary', 'description', 'objectives', 'problemStatement'];
-    const sectionBFields = ['departmentId', 'program', 'courseName', 'targetAudience', 'pedagogicalMethod'];
-    const sectionCFields = ['categoryId', 'technologies'];
-    const sectionDFields = ['primaryCreatorName', 'primaryCreatorEmail'];
-    const sectionEFields = ['developmentYear', 'version', 'developmentStatus'];
-    const errorFields = Object.keys(errors);
 
-    if (errorFields.some(f => sectionAFields.includes(f))) {
-      setActiveSection('A');
-      setServerError('Sila lengkapkan Bahagian A: Maklumat Asas Produk sebelum menghantar.');
-    } else if (errorFields.some(f => sectionBFields.includes(f))) {
-      setActiveSection('B');
-      setServerError('Sila lengkapkan Bahagian B: Maklumat Akademik sebelum menghantar.');
-    } else if (errorFields.some(f => sectionCFields.includes(f))) {
-      setActiveSection('C');
-      setServerError('Sila lengkapkan Bahagian C: Kategori & Teknologi sebelum menghantar.');
-    } else if (errorFields.some(f => sectionDFields.includes(f))) {
-      setActiveSection('D');
-      setServerError('Sila lengkapkan Bahagian D: Maklumat Pencipta sebelum menghantar.');
-    } else if (errorFields.some(f => sectionEFields.includes(f))) {
-      setActiveSection('E');
-      setServerError('Sila lengkapkan Bahagian E: Maklumat Pembangunan sebelum menghantar.');
-    } else {
-      setServerError('Sila lengkapkan semua maklumat yang diperlukan sebelum menghantar.');
-    }
+  const renderCharBadge = (currentLength: number, minLength: number, maxLength?: number) => {
+    const isMet = currentLength >= minLength && (!maxLength || currentLength <= maxLength);
+    return (
+      <span
+        className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+          isMet
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : 'bg-amber-50 text-amber-700 border border-amber-200'
+        }`}
+      >
+        {currentLength} {maxLength ? `/ ${maxLength}` : ''} aksara (Min: {minLength})
+      </span>
+    );
   };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <PageHeader
@@ -237,8 +262,18 @@ export const ProductRegistrationPage: React.FC = () => {
         }
       />
 
+      {/* Info Reminder Banner */}
+      <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-3.5 flex items-start gap-3 text-xs text-blue-900">
+        <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+        <div>
+          <span className="font-semibold">Panduan Pengisian Borang:</span> Ruangan bertanda{' '}
+          <span className="text-rose-600 font-bold">*</span> adalah wajib diisi. Anda boleh mengisi dalam{' '}
+          <strong>huruf besar atau huruf kecil</strong> mengikut kesesuaian. Pastikan bilangan aksara minimum dipenuhi (lencana bertukar hijau).
+        </div>
+      </div>
+
       {serverError && (
-        <Alert type="danger" title="Ralat Pendaftaran">
+        <Alert type="danger" title="Perhatian: Maklumat Belum Lengkap">
           {serverError}
         </Alert>
       )}
@@ -291,12 +326,15 @@ export const ProductRegistrationPage: React.FC = () => {
             />
             <CardBody className="space-y-4">
               <div>
-                <label className="label-base">
-                  Nama / Tajuk Produk Inovasi <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label-base mb-0">
+                    Nama / Tajuk Produk Inovasi <span className="text-rose-500">*</span>
+                  </label>
+                  {renderCharBadge(watchedTitle.length, 3)}
+                </div>
                 <input
                   type="text"
-                  placeholder="Contoh: Modul Realiti Tertimbuh Visualisasi Komponen Enjin Pesawat"
+                  placeholder="Contoh: Modul Interaktif Matematik Kejuruteraan"
                   className="input-base"
                   {...register('title')}
                 />
@@ -304,12 +342,15 @@ export const ProductRegistrationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="label-base">
-                  Ringkasan Eksekutif Produk (Maks 500 aksara) <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label-base mb-0">
+                    Ringkasan Eksekutif Produk <span className="text-rose-500">*</span>
+                  </label>
+                  {renderCharBadge(watchedSummary.length, 5, 500)}
+                </div>
                 <textarea
                   rows={2}
-                  placeholder="Ringkasan padat mengenai fungsi utama dan keunikan produk inovasi ini..."
+                  placeholder="Ringkasan padat mengenai fungsi utama produk inovasi ini (sekurang-kurangnya 5 aksara)..."
                   className="input-base"
                   {...register('summary')}
                 />
@@ -317,12 +358,15 @@ export const ProductRegistrationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="label-base">
-                  Penerangan Lengkap Produk <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label-base mb-0">
+                    Penerangan Lengkap Produk <span className="text-rose-500">*</span>
+                  </label>
+                  {renderCharBadge(watchedDescription.length, 5)}
+                </div>
                 <textarea
                   rows={4}
-                  placeholder="Terangkan secara terperinci bagaimana produk ini dibangunkan dan diguna pakai..."
+                  placeholder="Terangkan bagaimana produk ini dibangunkan dan diguna pakai (sekurang-kurangnya 5 aksara)..."
                   className="input-base"
                   {...register('description')}
                 />
@@ -331,12 +375,15 @@ export const ProductRegistrationPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label-base">
-                    Objektif Pembangunan Produk <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="label-base mb-0">
+                      Objektif Pembangunan Produk <span className="text-rose-500">*</span>
+                    </label>
+                    {renderCharBadge(watchedObjectives.length, 5)}
+                  </div>
                   <textarea
                     rows={3}
-                    placeholder="1. Meningkatkan daya visualisasi 3D pelajar...&#10;2. Mengurangkan ralat pemasangan amali..."
+                    placeholder="Nyatakan objektif pembangunan produk ini (sekurang-kurangnya 5 aksara)..."
                     className="input-base"
                     {...register('objectives')}
                   />
@@ -344,12 +391,15 @@ export const ProductRegistrationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="label-base">
-                    Pernyataan Masalah Pembelajaran <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="label-base mb-0">
+                      Pernyataan Masalah Pembelajaran <span className="text-rose-500">*</span>
+                    </label>
+                    {renderCharBadge(watchedProblemStatement.length, 5)}
+                  </div>
                   <textarea
                     rows={3}
-                    placeholder="Apakah isu atau kekangan dalam proses PdP yang ingin diselesaikan oleh inovasi ini..."
+                    placeholder="Apakah isu pembelajaran yang ingin diselesaikan (sekurang-kurangnya 5 aksara)..."
                     className="input-base"
                     {...register('problemStatement')}
                   />
@@ -358,16 +408,13 @@ export const ProductRegistrationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="label-base">Pautan Gambar Kulit / Thumbnail (Pilihan)</label>
+                <label className="label-base">Pautan Gambar Kulit / Thumbnail (Pilihan - Tidak Wajib)</label>
                 <input
                   type="text"
-                  placeholder="https://images.unsplash.com/... atau URL imej rasmi"
+                  placeholder="https://images.unsplash.com/... atau biarkan kosong"
                   className="input-base"
                   {...register('thumbnailUrl')}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">
-                  Masukkan pautan URL imej pratonton bagi kad arkib.
-                </p>
               </div>
             </CardBody>
             <CardFooter>
@@ -406,12 +453,15 @@ export const ProductRegistrationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="label-base">
-                    Program Pengajian <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="label-base mb-0">
+                      Program Pengajian <span className="text-rose-500">*</span>
+                    </label>
+                    {renderCharBadge(watchedProgram.length, 2)}
+                  </div>
                   <input
                     type="text"
-                    placeholder="Contoh: Diploma Kejuruteraan Mekanikal (DKM)"
+                    placeholder="Contoh: DKM / Diploma Kejuruteraan Mekanikal"
                     className="input-base"
                     {...register('program')}
                   />
@@ -431,12 +481,15 @@ export const ProductRegistrationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="label-base">
-                    Nama Kursus <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="label-base mb-0">
+                      Nama Kursus <span className="text-rose-500">*</span>
+                    </label>
+                    {renderCharBadge(watchedCourseName.length, 2)}
+                  </div>
                   <input
                     type="text"
-                    placeholder="Contoh: Thermodynamics"
+                    placeholder="Contoh: Engineering Mathematics"
                     className="input-base"
                     {...register('courseName')}
                   />
@@ -458,12 +511,15 @@ export const ProductRegistrationPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label-base">
-                    Sasaran Pengguna <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="label-base mb-0">
+                      Sasaran Pengguna <span className="text-rose-500">*</span>
+                    </label>
+                    {renderCharBadge(watchedTargetAudience.length, 2)}
+                  </div>
                   <input
                     type="text"
-                    placeholder="Contoh: Pelajar Semester 2 DKM dan Pensyarah Amali"
+                    placeholder="Contoh: Pelajar Semester 2"
                     className="input-base"
                     {...register('targetAudience')}
                   />
@@ -471,12 +527,15 @@ export const ProductRegistrationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="label-base">
-                    Kaedah Penggunaan dalam PdP <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="label-base mb-0">
+                      Kaedah Penggunaan dalam PdP <span className="text-rose-500">*</span>
+                    </label>
+                    {renderCharBadge(watchedPedagogicalMethod.length, 3)}
+                  </div>
                   <input
                     type="text"
-                    placeholder="Contoh: Pembelajaran Teradun, Amali Bengkel, Ulangkaji Kendiri"
+                    placeholder="Contoh: Pembelajaran Teradun / Amali / Kuiz"
                     className="input-base"
                     {...register('pedagogicalMethod')}
                   />
@@ -507,7 +566,7 @@ export const ProductRegistrationPage: React.FC = () => {
             <CardBody className="space-y-5">
               <div>
                 <label className="label-base">
-                  Kategori Utama Produk Inovasi <span className="text-rose-500">*</span>
+                  Kategori Utama Produk Inovasi <span className="text-rose-500">*</span> (Wajib pilih satu)
                 </label>
                 <select className="input-base" {...register('categoryId')}>
                   <option value="">-- Pilih Kategori Utama --</option>
@@ -522,12 +581,9 @@ export const ProductRegistrationPage: React.FC = () => {
 
               <div>
                 <label className="label-base">
-                  Teknologi & Platform Yang Digunakan <span className="text-rose-500">*</span>
+                  Teknologi & Platform Yang Digunakan <span className="text-rose-500">*</span> (Pilih sekurang-kurangnya 1)
                 </label>
-                <p className="text-xs text-gray-500 mb-2">
-                  Pilih sekurang-kurangnya satu platform atau teknologi yang menyokong inovasi ini:
-                </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mt-1">
                   {availableTechnologies.map((tech) => {
                     const isSelected = watchedTechnologies.includes(tech);
                     return (
@@ -578,7 +634,9 @@ export const ProductRegistrationPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="label-base">Nama Penuh Pencipta Utama</label>
+                    <label className="label-base">
+                      Nama Penuh Pencipta Utama <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="text"
                       className="input-base"
@@ -588,7 +646,9 @@ export const ProductRegistrationPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="label-base">E-mel Institusi</label>
+                    <label className="label-base">
+                      E-mel Institusi <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="email"
                       className="input-base"
@@ -598,10 +658,10 @@ export const ProductRegistrationPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="label-base">Nombor Staf (PBS)</label>
+                    <label className="label-base">Nombor Staf (PBS) (Pilihan)</label>
                     <input
                       type="text"
-                      placeholder="Contoh: PBS-JKM-012"
+                      placeholder="Contoh: PBS-JMSK-007"
                       className="input-base"
                       {...register('primaryCreatorStaffId')}
                     />
@@ -617,7 +677,7 @@ export const ProductRegistrationPage: React.FC = () => {
                       Ahli Pasukan Pembangun ({fields.length})
                     </h4>
                     <p className="text-xs text-gray-500">
-                      Pensyarah bersama, staf teknikal atau pelajar yang terlibat dalam pembangunan
+                      Pensyarah bersama, staf teknikal atau pelajar yang terlibat dalam pembangunan (jika ada)
                     </p>
                   </div>
                   <Button
@@ -654,19 +714,19 @@ export const ProductRegistrationPage: React.FC = () => {
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2.5 w-full">
                           <input
                             type="text"
-                            placeholder="Nama Ahli Pasukan"
+                            placeholder="Nama Ahli Pasukan (min 2 aksara)"
                             className="input-base text-xs"
                             {...register(`teamMembers.${index}.displayName` as const)}
                           />
                           <input
                             type="text"
-                            placeholder="Peranan (cth: Pereka 3D / Penilai Kandungan)"
+                            placeholder="Peranan (cth: Pereka / Penilai)"
                             className="input-base text-xs"
                             {...register(`teamMembers.${index}.roleInProject` as const)}
                           />
                           <input
                             type="email"
-                            placeholder="E-mel Ahli"
+                            placeholder="E-mel Ahli (Pilihan)"
                             className="input-base text-xs"
                             {...register(`teamMembers.${index}.email` as const)}
                           />
@@ -709,7 +769,7 @@ export const ProductRegistrationPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="label-base">
-                    Tahun Pembangunan <span className="text-rose-500">*</span>
+                    Tahun Pembangunan (2018 - 2050) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -738,7 +798,7 @@ export const ProductRegistrationPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: 1.0, 2.1"
+                    placeholder="Contoh: 1.0"
                     className="input-base"
                     {...register('version')}
                   />
@@ -748,10 +808,10 @@ export const ProductRegistrationPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label-base">Pautan Produk Digital (URL Akses Pelajar)</label>
+                  <label className="label-base">Pautan Produk Digital (Pilihan)</label>
                   <input
                     type="text"
-                    placeholder="https://..."
+                    placeholder="https://... (boleh dibiarkan kosong)"
                     className="input-base"
                     {...register('productUrl')}
                   />
@@ -759,10 +819,10 @@ export const ProductRegistrationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="label-base">Pautan Demo / Video / Repositori</label>
+                  <label className="label-base">Pautan Demo / Video (Pilihan)</label>
                   <input
                     type="text"
-                    placeholder="https://youtube.com/... atau GitHub / Drive"
+                    placeholder="https://youtube.com/... (boleh dibiarkan kosong)"
                     className="input-base"
                     {...register('demoUrl')}
                   />
@@ -771,10 +831,10 @@ export const ProductRegistrationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="label-base">Catatan Pelaksanaan / Nota Tambahan</label>
+                <label className="label-base">Catatan Pelaksanaan / Nota Tambahan (Pilihan)</label>
                 <textarea
                   rows={2}
-                  placeholder="Catatan mengenai impak ujian awal atau sokongan peranti yang diperlukan..."
+                  placeholder="Catatan tambahan jika ada..."
                   className="input-base"
                   {...register('implementationNotes')}
                 />
@@ -832,7 +892,10 @@ export const ProductRegistrationPage: React.FC = () => {
                   type="button"
                   variant="secondary"
                   loading={isSubmitting}
-                                    onClick={handleSubmit((data) => onSubmitForm(data, true), handleFormError)}
+                  onClick={handleSubmit(
+                    (data) => onSubmitForm(data, true),
+                    (err) => handleValidationErrors(err)
+                  )}
                   icon={<Save className="w-4 h-4" />}
                 >
                   Simpan Draf
@@ -841,7 +904,10 @@ export const ProductRegistrationPage: React.FC = () => {
                   type="button"
                   variant="primary"
                   loading={isSubmitting}
-                                   onClick={handleSubmit((data) => onSubmitForm(data, false), handleFormError)}
+                  onClick={handleSubmit(
+                    (data) => onSubmitForm(data, false),
+                    (err) => handleValidationErrors(err)
+                  )}
                   icon={<Send className="w-4 h-4" />}
                 >
                   Hantar untuk Semakan
