@@ -47,18 +47,42 @@ export const AppRoutes: React.FC = () => {
           {/* Documents */}
           <Route path="/dokumen" element={<DocumentArchivePage />} />
 
-          {/* User Management (Super Admin only) */}
-          <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+          {/* User Management */}
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm']}
+              />
+            }
+          >
             <Route path="/pengguna" element={<UserManagementPage />} />
           </Route>
 
-          {/* System Settings (Super Admin only) */}
-          <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+          {/* System Settings */}
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm']}
+              />
+            }
+          >
             <Route path="/tetapan" element={<SystemSettingsPage />} />
           </Route>
 
-          {/* Audit Logs (Super Admin & Pentadbir UePM) */}
-          <Route element={<ProtectedRoute allowedRoles={['super_admin', 'pentadbir_uepm']} />}>
+          {/* Audit Logs */}
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  'super_admin',
+                  'admin',
+                  'pentadbir_uepm',
+                  'ketua_unit_uepm',
+                  'timbalan_pengarah',
+                ]}
+              />
+            }
+          >
             <Route path="/audit-log" element={<AuditLogPage />} />
           </Route>
 
