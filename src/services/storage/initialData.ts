@@ -127,7 +127,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-superadmin',
     email: 'superadmin@polibanting.edu.my',
-    fullName: 'AISHAH BINTI SAIM',
+    fullName: 'Aishah binti Saim',
     staffId: 'PBS-ADM-001',
     role: 'super_admin',
     departmentId: 'SEMUA',
@@ -138,7 +138,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-admin',
     email: 'admin@polibanting.edu.my',
-    fullName: 'AISHAH BINTI SAIM',
+    fullName: 'Aishah binti Saim',
     staffId: 'PBS-ADM-002',
     role: 'admin',
     departmentId: 'SEMUA',
@@ -149,7 +149,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-uepm',
     email: 'uepm@polibanting.edu.my',
-    fullName: 'AISHAH BINTI SAIM',
+    fullName: 'Aishah binti Saim',
     staffId: 'PBS-EPM-002',
     role: 'pentadbir_uepm',
     departmentId: 'SEMUA',
@@ -160,7 +160,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-ketua-uepm',
     email: 'ketua.uepm@polibanting.edu.my',
-    fullName: 'AISHAH BINTI SAIM',
+    fullName: 'Aishah binti Saim',
     staffId: 'PBS-EPM-003',
     role: 'ketua_unit_uepm',
     departmentId: 'SEMUA',
@@ -171,7 +171,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-pegawai-pbs',
     email: 'pegawai.pbs@polibanting.edu.my',
-    fullName: 'NORMALA BINTI SULLIAMAN',
+    fullName: 'Normala binti Sulliaman',
     staffId: 'PBS-EPM-004',
     role: 'pegawai_pbs',
     departmentId: 'SEMUA',
@@ -182,7 +182,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-pegawai-jpp',
     email: 'pegawai.jpp@polibanting.edu.my',
-    fullName: 'MOHD ASWAD BIN OTHMAN',
+    fullName: 'Mohd Aswad bin Othman',
     staffId: 'PBS-JPP-006',
     role: 'pegawai_jpp',
     departmentId: 'JPP',
@@ -193,7 +193,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-pegawai-jkm',
     email: 'pegawai.jkm@polibanting.edu.my',
-    fullName: 'DR. LIM YEE KAI',
+    fullName: 'Dr. Lim Yee Kai',
     staffId: 'PBS-JKM-005',
     role: 'pegawai_jkm',
     departmentId: 'JKM',
@@ -204,7 +204,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-pegawai-jmsk',
     email: 'pegawai.jmsk@polibanting.edu.my',
-    fullName: 'NURUL IZZATI BINTI MOHD ZAKI',
+    fullName: 'Nurul Izzati binti Mohd Zaki',
     staffId: 'PBS-JMSK-007',
     role: 'pegawai_jmsk',
     departmentId: 'JMSK',
@@ -215,7 +215,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-pegawai-jpa',
     email: 'pegawai.jpa@polibanting.edu.my',
-    fullName: 'HUWAINA JASMIN BINTI HUSSIN',
+    fullName: 'Huwaina Jasmin binti Hussin',
     staffId: 'PBS-JPA-008',
     role: 'pegawai_jpa',
     departmentId: 'JPA',
@@ -226,7 +226,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'user-timbalan-pengarah',
     email: 'timbalan.pengarah@polibanting.edu.my',
-    fullName: 'ROSWADY BIN ABDUL WAHAB',
+    fullName: 'Roswady bin Abdul Wahab',
     staffId: 'PBS-MGT-002',
     role: 'timbalan_pengarah',
     departmentId: 'SEMUA',
