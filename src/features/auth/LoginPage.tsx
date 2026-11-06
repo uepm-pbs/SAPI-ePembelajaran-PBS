@@ -12,26 +12,42 @@ export const LoginPage: React.FC = () => {
   const { login, switchUserRoleForTesting, error } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('superadmin@polibanting.edu.my');
-  const [password, setPassword] = useState('password123');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string | null>('user-superadmin');
+  const storedUsers = dbService.getUsers();
 
-  // State khas untuk Pensyarah Umum (mana-mana pensyarah boleh isi nama & jabatan sendiri)
-  const [lecturerName, setLecturerName] = useState('Pn. Haslinawati binti Hassan');
-  const [lecturerDept, setLecturerDept] = useState('JKM');
-  const [lecturerStaffId, setLecturerStaffId] = useState('PBS-STAF');
+  // Nama boleh diedit untuk setiap peranan dalam panel RBAC
+  const [userNames, setUserNames] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    INITIAL_USERS.forEach((u) => {
+      const existing = storedUsers.find((su) => su.uid === u.uid);
+      map[u.uid] = existing ? existing.fullName : u.fullName;
+    });
+    return map;
+  });
 
-  // Email boleh diedit untuk setiap pengguna dalam panel RBAC
+  // Email boleh diedit untuk setiap peranan dalam panel RBAC
   const [userEmails, setUserEmails] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
-    const storedUsers = dbService.getUsers();
     INITIAL_USERS.forEach((u) => {
       const existing = storedUsers.find((su) => su.uid === u.uid);
       map[u.uid] = existing ? existing.email : u.email;
     });
     return map;
+  });
+
+  const [email, setEmail] = useState(() => userEmails['user-superadmin'] || 'superadmin@polibanting.edu.my');
+  const [password, setPassword] = useState('password123');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string | null>('user-superadmin');
+
+  // Pilihan tambahan khas untuk Pensyarah (Jabatan & No. Staf)
+  const [lecturerDept, setLecturerDept] = useState(() => {
+    const existing = storedUsers.find((su) => su.uid === 'user-pensyarah-jkm');
+    return existing?.departmentId || 'JKM';
+  });
+  const [lecturerStaffId, setLecturerStaffId] = useState(() => {
+    const existing = storedUsers.find((su) => su.uid === 'user-pensyarah-jkm');
+    return existing?.staffId || 'PBS-STAF';
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,37 +56,36 @@ export const LoginPage: React.FC = () => {
     setLocalError(null);
 
     try {
-      // Jika pengguna memilih kad daripada senarai RBAC
       if (selectedRole) {
         const existingUser = dbService.getUserById(selectedRole);
 
         if (existingUser) {
-          // Jika peranan ialah Pensyarah, kemas kini nama, e-mel, jabatan & no staf mengikut input pensyarah
-          if (selectedRole === 'user-pensyarah-jkm') {
-            if (!lecturerName.trim() || lecturerName.trim().length < 2) {
-              setLocalError('Sila masukkan Nama Penuh Pensyarah (sekurang-kurangnya 2 aksara).');
-              setIsSubmitting(false);
-              return;
-            }
-            dbService.updateUser(
-              selectedRole,
-              {
-                fullName: lecturerName.trim(),
-                email: email.trim(),
-                departmentId: lecturerDept,
-                staffId: lecturerStaffId.trim() || 'PBS-STAF',
-              },
-              existingUser
-            );
-          } else if (email.trim() !== existingUser.email) {
-            // Jika peranan lain menukar e-mel dalam kotak RBAC, kemas kini e-mel tersebut
-            dbService.updateUser(
-              selectedRole,
-              { email: email.trim() },
-              existingUser
-            );
+          const customName = (userNames[selectedRole] || '').trim();
+          const customEmail = (email || userEmails[selectedRole] || '').trim();
+
+          if (!customName || customName.length < 2) {
+            setLocalError('Sila masukkan Nama Penuh pengguna (sekurang-kurangnya 2 aksara).');
+            setIsSubmitting(false);
+            return;
           }
 
+          if (!customEmail || !customEmail.includes('@')) {
+            setLocalError('Sila masukkan alamat e-mel yang sah.');
+            setIsSubmitting(false);
+            return;
+          }
+
+          const updates: Record<string, any> = {
+            fullName: customName,
+            email: customEmail,
+          };
+
+          if (selectedRole === 'user-pensyarah-jkm') {
+            updates.departmentId = lecturerDept;
+            updates.staffId = lecturerStaffId.trim() || 'PBS-STAF';
+          }
+
+          dbService.updateUser(selectedRole, updates, existingUser);
           switchUserRoleForTesting(selectedRole);
           setIsSubmitting(false);
           navigate('/dashboard');
@@ -78,7 +93,7 @@ export const LoginPage: React.FC = () => {
         }
       }
 
-      // Log masuk biasa melalui e-mel
+      // Log masuk biasa melalui e-mel jika tidak memilih kad
       const success = await login(email.trim(), password);
       setIsSubmitting(false);
       if (success) {
@@ -94,22 +109,17 @@ export const LoginPage: React.FC = () => {
     setSelectedRole(uid);
     setEmail(userEmails[uid] || '');
     setLocalError(null);
+  };
 
-    if (uid === 'user-pensyarah-jkm') {
-      const storedLecturer = dbService.getUserById('user-pensyarah-jkm');
-      if (storedLecturer) {
-        setLecturerName(storedLecturer.fullName);
-        setLecturerDept(storedLecturer.departmentId || 'JKM');
-        setLecturerStaffId(storedLecturer.staffId || 'PBS-STAF');
-      }
-    }
+  const handleUserNameChange = (uid: string, newName: string) => {
+    setUserNames((prev) => ({ ...prev, [uid]: newName }));
+    setSelectedRole(uid);
   };
 
   const handleUserEmailChange = (uid: string, newEmail: string) => {
     setUserEmails((prev) => ({ ...prev, [uid]: newEmail }));
-    if (selectedRole === uid) {
-      setEmail(newEmail);
-    }
+    setSelectedRole(uid);
+    setEmail(newEmail);
   };
 
   const formatRole = (role: string) => role.split('_').join(' ');
@@ -147,7 +157,12 @@ export const LoginPage: React.FC = () => {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (selectedRole) {
+                      setUserEmails((prev) => ({ ...prev, [selectedRole]: e.target.value }));
+                    }
+                  }}
                   placeholder="nama@polibanting.edu.my"
                   className="input-base pl-9 text-xs"
                 />
@@ -180,17 +195,17 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          {/* Panel Ujian Akses Peranan (RBAC) */}
+          {/* Panel Pilihan Peranan (RBAC) */}
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
               <UserCheck className="w-4 h-4 text-navy-700" />
               <span>Pilihan Peranan Pengguna (RBAC)</span>
             </div>
             <p className="text-[11px] text-gray-500 mb-3">
-              Pilih peranan di bawah. Bagi <strong>Pensyarah</strong>, sesiapa sahaja boleh mengisi nama, e-mel & jabatan sendiri:
+              Pilih peranan di bawah. Anda boleh menyunting <strong>Nama</strong> & <strong>E-mel</strong> sebelum klik Log Masuk:
             </p>
 
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
               {INITIAL_USERS.map((u) => {
                 const isLecturerCard = u.uid === 'user-pensyarah-jkm';
                 const isSelected = selectedRole === u.uid;
@@ -200,77 +215,39 @@ export const LoginPage: React.FC = () => {
                     key={u.uid}
                     onClick={() => handleSelectRole(u.uid)}
                     className={
-                      'w-full text-left p-2.5 rounded-lg border transition-all cursor-pointer text-xs ' +
+                      'w-full text-left p-2.5 rounded-lg border transition-all cursor-pointer text-xs space-y-1.5 ' +
                       (isSelected
                         ? 'border-navy-500 bg-navy-50 ring-1 ring-navy-400'
                         : 'border-gray-200 hover:border-navy-300 hover:bg-gray-50')
                     }
                   >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-semibold text-gray-900 truncate">
-                        {isLecturerCard
-                          ? `${lecturerName || 'Pensyarah PBS'} (Boleh Tukar Nama)`
-                          : u.fullName}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-navy-100 text-navy-800 shrink-0 ml-2 whitespace-nowrap">
+                    {/* Baris Atas: Label Peranan */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-navy-100 text-navy-800 whitespace-nowrap">
                         {formatRole(u.role)}
                       </span>
+                      {isLecturerCard && (
+                        <span className="text-[10px] text-emerald-700 font-semibold">
+                          Terbuka kepada semua pensyarah
+                        </span>
+                      )}
                     </div>
 
-                    {/* Ruangan Tambahan Khas Jika Kad Pensyarah Dipilih */}
-                    {isLecturerCard && isSelected && (
-                      <div
-                        className="space-y-2 mb-2 pt-1.5 border-t border-navy-200/60"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <p className="text-[10px] text-navy-800 font-medium">
-                          ✏️ Masukkan maklumat anda sebagai Pensyarah / Pencipta Produk:
-                        </p>
+                    {/* Input Nama Penuh (Boleh Edit untuk Semua Peranan) */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      <User className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={userNames[u.uid] || ''}
+                        onChange={(e) => handleUserNameChange(u.uid, e.target.value)}
+                        onClick={() => handleSelectRole(u.uid)}
+                        placeholder="Nama Penuh Pegawai / Pensyarah"
+                        className="w-full pl-6 pr-2 py-1 text-[11px] font-semibold border border-gray-200 rounded-md bg-white focus:outline-none focus:border-navy-400 focus:ring-1 focus:ring-navy-300 text-gray-900"
+                      />
+                    </div>
 
-                        <div className="relative">
-                          <User className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                          <input
-                            type="text"
-                            value={lecturerName}
-                            onChange={(e) => setLecturerName(e.target.value)}
-                            placeholder="Nama Penuh Pensyarah (cth: Pn. Siti binti Ali)"
-                            className="w-full pl-6 pr-2 py-1 text-[11px] border border-gray-300 rounded-md bg-white focus:outline-none focus:border-navy-500 text-gray-800 font-medium"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <div className="relative">
-                            <Building2 className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                            <select
-                              value={lecturerDept}
-                              onChange={(e) => setLecturerDept(e.target.value)}
-                              className="w-full pl-6 pr-2 py-1 text-[11px] border border-gray-300 rounded-md bg-white focus:outline-none focus:border-navy-500 text-gray-700"
-                            >
-                              <option value="JKM">Jabatan: JKM</option>
-                              <option value="JPP">Jabatan: JPP</option>
-                              <option value="JMSK">Jabatan: JMSK</option>
-                              <option value="JPA">Jabatan: JPA</option>
-                            </select>
-                          </div>
-
-                          <div className="relative">
-                            <BadgeCheck className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={lecturerStaffId}
-                              onChange={(e) => setLecturerStaffId(e.target.value)}
-                              placeholder="No. Staf (Pilihan)"
-                              className="w-full pl-6 pr-2 py-1 text-[11px] border border-gray-300 rounded-md bg-white focus:outline-none focus:border-navy-500 text-gray-700"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div
-                      className="relative"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    {/* Input E-mel (Boleh Edit untuk Semua Peranan) */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
                       <Mail className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
                       <input
                         type="email"
@@ -281,6 +258,39 @@ export const LoginPage: React.FC = () => {
                         className="w-full pl-6 pr-2 py-1 text-[11px] border border-gray-200 rounded-md bg-white focus:outline-none focus:border-navy-400 focus:ring-1 focus:ring-navy-300 text-gray-600"
                       />
                     </div>
+
+                    {/* Pilihan Jabatan & No. Staf Khas untuk Pensyarah */}
+                    {isLecturerCard && isSelected && (
+                      <div
+                        className="grid grid-cols-2 gap-1.5 pt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="relative">
+                          <Building2 className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                          <select
+                            value={lecturerDept}
+                            onChange={(e) => setLecturerDept(e.target.value)}
+                            className="w-full pl-6 pr-2 py-1 text-[11px] border border-gray-300 rounded-md bg-white focus:outline-none focus:border-navy-500 text-gray-700"
+                          >
+                            <option value="JKM">Jabatan: JKM</option>
+                            <option value="JPP">Jabatan: JPP</option>
+                            <option value="JMSK">Jabatan: JMSK</option>
+                            <option value="JPA">Jabatan: JPA</option>
+                          </select>
+                        </div>
+
+                        <div className="relative">
+                          <BadgeCheck className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={lecturerStaffId}
+                            onChange={(e) => setLecturerStaffId(e.target.value)}
+                            placeholder="No. Staf (Pilihan)"
+                            className="w-full pl-6 pr-2 py-1 text-[11px] border border-gray-300 rounded-md bg-white focus:outline-none focus:border-navy-500 text-gray-700"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -288,9 +298,8 @@ export const LoginPage: React.FC = () => {
 
             {selectedRole && (
               <p className="text-[10px] text-navy-700 font-medium mt-2 text-center">
-                {'✅ Peranan dipilih — klik '}
+                {'✅ Peranan dipilih — semak nama/e-mel dan klik '}
                 <strong>Log Masuk ke SAPIe</strong>
-                {' di atas untuk masuk'}
               </p>
             )}
           </div>
