@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/auth';
 
@@ -33,9 +33,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
           Peranan anda ({role}) tidak mempunyai kebenaran untuk mengakses modul ini mengikut dasar keselamatan institusi.
         </p>
         <div className="mt-4">
-          <a href="/dashboard" className="btn-primary text-xs">
+          <Link to="/dashboard" className="btn-primary text-xs inline-block">
             Kembali ke Dashboard Utama
-          </a>
+          </Link>
         </div>
       </div>
     );
