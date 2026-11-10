@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -22,11 +22,34 @@ import { INITIAL_USERS } from '../../services/storage/initialData';
 import { dbService } from '../../services/storage/databaseService';
 
 const PASSWORD_STORAGE_KEY = 'sapie_user_passwords_v1';
+const USERS_STORAGE_KEY = 'sapie_users_v1';
 const DEFAULT_PASSWORD = 'password123';
 
 export const LoginPage: React.FC = () => {
   const { switchUserRoleForTesting, error } = useAuth();
   const navigate = useNavigate();
+
+  // Pastikan mana-mana pengguna baharu dalam INITIAL_USERS (seperti Pegawai MARO) dimasukkan ke dalam localStorage secara automatik
+  useEffect(() => {
+    try {
+      const currentUsers = dbService.getUsers();
+      let hasNewUser = false;
+      const mergedUsers = [...currentUsers];
+
+      INITIAL_USERS.forEach((initUser) => {
+        if (!mergedUsers.some((u) => u.uid === initUser.uid)) {
+          mergedUsers.push(initUser);
+          hasNewUser = true;
+        }
+      });
+
+      if (hasNewUser) {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(mergedUsers));
+      }
+    } catch (e) {
+      console.error('Sync users error:', e);
+    }
+  }, []);
 
   const storedUsers = dbService.getUsers();
 
@@ -97,7 +120,6 @@ export const LoginPage: React.FC = () => {
     localStorage.setItem(PASSWORD_STORAGE_KEY, JSON.stringify(updated));
   };
 
-  // Cari pengguna berdasarkan kad yang dipilih atau e-mel yang ditaip
   const resolveTargetUid = (): string | null => {
     if (selectedRole) return selectedRole;
     const trimmedEmail = email.trim().toLowerCase();
@@ -122,7 +144,17 @@ export const LoginPage: React.FC = () => {
         return;
       }
 
-      const existingUser = dbService.getUserById(targetUid);
+      let existingUser = dbService.getUserById(targetUid);
+      if (!existingUser) {
+        const fallbackInit = INITIAL_USERS.find((u) => u.uid === targetUid);
+        if (fallbackInit) {
+          const all = dbService.getUsers();
+          all.push(fallbackInit);
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(all));
+          existingUser = fallbackInit;
+        }
+      }
+
       if (!existingUser) {
         setLocalError('Rekod pengguna tidak ditemui dalam sistem.');
         setIsSubmitting(false);
@@ -244,7 +276,10 @@ export const LoginPage: React.FC = () => {
     setEmail(newEmail);
   };
 
-  const formatRole = (role: string) => role.split('_').join(' ');
+  const formatRole = (role: string) => {
+    if (role === 'pegawai_maro') return 'Pegawai Multimedia & Sumber (MARO)';
+    return role.split('_').join(' ');
+  };
 
   return (
     <div className="min-h-screen bg-appbg flex flex-col justify-center py-12 sm:px-6 lg:px-8">
