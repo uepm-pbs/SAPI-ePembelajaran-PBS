@@ -180,6 +180,17 @@ export const INITIAL_USERS: UserProfile[] = [
     updatedAt: '2026-01-01T08:00:00.000Z',
   },
   {
+    uid: 'user-pegawai-maro',
+    email: 'pegawai.maro@polibanting.edu.my',
+    fullName: 'Dehl Affie Abang Kassim',
+    staffId: 'PBS-MARO-001',
+    role: 'pegawai_maro',
+    departmentId: 'SEMUA',
+    active: true,
+    createdAt: '2026-01-01T08:00:00.000Z',
+    updatedAt: '2026-01-01T08:00:00.000Z',
+  },
+  {
     uid: 'user-pegawai-jpp',
     email: 'pegawai.jpp@polibanting.edu.my',
     fullName: 'Mohd Aswad bin Othman',
