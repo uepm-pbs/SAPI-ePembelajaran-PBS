@@ -95,6 +95,8 @@ export const UserRoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
       return <Badge variant="primary">Ketua Unit UePM</Badge>;
     case 'pegawai_pbs':
       return <Badge variant="info">Pegawai ePembelajaran PBS</Badge>;
+    case 'pegawai_maro':
+      return <Badge variant="info">Pegawai Multimedia & Sumber (MARO)</Badge>;
     case 'pegawai_jpp':
       return <Badge variant="info">Pegawai ePembelajaran JPP</Badge>;
     case 'pegawai_jabatan':
