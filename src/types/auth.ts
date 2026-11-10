@@ -4,6 +4,7 @@ export type UserRole =
   | 'pentadbir_uepm'      // Pentadbir UePM: Pengurusan arkib institusi & kelulusan
   | 'ketua_unit_uepm'     // Ketua Unit UePM: Ketua unit ePembelajaran
   | 'pegawai_pbs'         // Pegawai ePembelajaran PBS: Pegawai ePembelajaran Politeknik Banting
+  | 'pegawai_maro'        // Pegawai Multimedia dan Sumber (MARO)
   | 'pegawai_jpp'         // Pegawai ePembelajaran JPP: Jabatan Penyelenggaraan Pesawat
   | 'pegawai_jabatan'     // Pegawai Jabatan: Kawalan & semakan peringkat jabatan
   | 'pegawai_jkm'         // Pegawai ePembelajaran JKM: Jabatan Kejuruteraan Mekanikal
