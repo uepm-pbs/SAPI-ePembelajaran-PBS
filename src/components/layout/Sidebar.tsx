@@ -15,7 +15,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,67 +47,67 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Dashboard Utama',
       to: '/dashboard',
       icon: LayoutDashboard,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Arkib Produk',
       to: '/arkib-produk',
       icon: Archive,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Pendaftaran Produk',
       to: '/pendaftaran-produk',
       icon: FilePlus,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah'],
     },
     {
       label: 'Pencapaian & Anugerah',
       to: '/pencapaian',
       icon: Trophy,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Pengurusan Laporan',
       to: '/laporan',
       icon: FileText,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pengurusan'],
     },
     {
       label: 'Dokumen Arkib',
       to: '/dokumen',
       icon: FolderArchive,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
     {
       label: 'Analitik & Statistik',
       to: '/analitik',
       icon: BarChart3,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pengurusan'],
     },
     {
       label: 'Pengurusan Pengguna',
       to: '/pengguna',
       icon: Users,
-      roles: ['super_admin'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm'],
     },
     {
       label: 'Tetapan Sistem',
       to: '/tetapan',
       icon: Settings,
-      roles: ['super_admin'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm'],
     },
     {
       label: 'Log Aktiviti',
       to: '/audit-log',
       icon: History,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah'],
     },
     {
       label: 'Profil Saya',
       to: '/profil',
       icon: UserCircle,
-      roles: ['super_admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
+      roles: ['super_admin', 'admin', 'pentadbir_uepm', 'ketua_unit_uepm', 'timbalan_pengarah', 'pegawai_jabatan', 'pegawai_pbs', 'pegawai_maro', 'pegawai_jpp', 'pegawai_jkm', 'pegawai_jmsk', 'pegawai_jpa', 'pensyarah', 'pengurusan'],
     },
   ];
 
