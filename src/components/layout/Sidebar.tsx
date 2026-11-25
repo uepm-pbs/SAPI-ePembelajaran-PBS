@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,8 +18,6 @@ import {
   BookOpen,
   X,
   CheckCircle2,
-  HelpCircle,
-  ShieldCheck,
   Printer,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -147,7 +145,7 @@ export const UserGuideModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
                       <td className="p-2.5 font-semibold">Pegawai ePembelajaran JPP</td>
                       <td className="p-2.5">Mohd Aswad bin Othman</td>
                       <td className="p-2.5">JPP</td>
-                      <td className="p-2.5">Penyelaras produk inovasi Jabatan Kejuruteraan Penyelenggaraan Pesawat.</td>
+                      <td className="p-2.5">Penyelaras produk inovasi Jabatan Penyenggaraan Pesawat.</td>
                     </tr>
                     <tr>
                       <td className="p-2.5 font-semibold">Pegawai ePembelajaran JKM</td>
@@ -363,6 +361,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const [showGuideModal, setShowGuideModal] = useState(false);
+
+  // Auto-kemas kini nama JPP kepada "Jabatan Penyenggaraan Pesawat" dalam tetapan pelayar tanpa memadam produk
+  useEffect(() => {
+    try {
+      const rawSettings = localStorage.getItem('sapie_settings_v1');
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (parsed.departments && Array.isArray(parsed.departments)) {
+          let changed = false;
+          parsed.departments = parsed.departments.map((d: any) => {
+            if (d.departmentId === 'JPP' && d.name !== 'Jabatan Penyenggaraan Pesawat') {
+              changed = true;
+              return {
+                ...d,
+                name: 'Jabatan Penyenggaraan Pesawat',
+                headName: 'Ketua Jabatan Penyenggaraan Pesawat',
+              };
+            }
+            return d;
+          });
+          if (changed) {
+            localStorage.setItem('sapie_settings_v1', JSON.stringify(parsed));
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Sync JPP name error:', e);
+    }
+  }, []);
 
   const handleLogout = async () => {
     await logout();
