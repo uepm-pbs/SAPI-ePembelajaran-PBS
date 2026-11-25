@@ -16,11 +16,11 @@ export const INITIAL_DEPARTMENTS: Department[] = [
   {
     departmentId: 'JPP',
     code: 'JPP',
-    name: 'Jabatan Kejuruteraan Penyelenggaraan Pesawat',
+    name: 'Jabatan Penyenggaraan Pesawat',
     active: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    headName: 'Ketua Jabatan Kejuruteraan Penyelenggaraan Pesawat',
+    headName: 'Ketua Jabatan Penyenggaraan Pesawat',
     contactEmail: 'jpp@polibanting.edu.my',
   },
   {
