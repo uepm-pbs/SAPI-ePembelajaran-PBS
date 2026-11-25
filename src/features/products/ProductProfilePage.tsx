@@ -1,12 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Archive,
   Trophy,
   FolderArchive,
   FileText,
   Users,
-  Calendar,
   History,
   CheckCircle2,
   XCircle,
@@ -17,16 +15,14 @@ import {
   Upload,
   Download,
   BookOpen,
-  Building,
   GraduationCap,
   Layers,
-  ArrowLeft,
-  Share2,
+  Link2,
 } from 'lucide-react';
 import { dbService } from '../../services/storage/databaseService';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/common/PageHeader';
-import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
+import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Tabs, TabItem } from '../../components/common/Tabs';
 import { Button } from '../../components/common/Button';
 import { Badge, RegistrationStatusBadge, AchievementStatusBadge } from '../../components/common/Badge';
@@ -44,6 +40,16 @@ import {
 } from '../../utils/permissionHelper';
 import { AchievementFormModal } from '../achievements/AchievementFormModal';
 import { DocumentUploadModal } from '../documents/DocumentUploadModal';
+
+// Pastikan URL mempunyai http:// atau https:// supaya boleh dibuka dengan betul
+const normalizeExternalUrl = (rawUrl?: string): string | null => {
+  if (!rawUrl || !rawUrl.trim()) return null;
+  const trimmed = rawUrl.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
 
 export const ProductProfilePage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -89,11 +95,20 @@ export const ProductProfilePage: React.FC = () => {
   const documents = dbService.getDocuments({ productId: product.productId });
   const auditLogs = dbService.getAuditLogs({ entityType: 'Product' }).filter(l => l.entityId === product.productId);
 
-  // Permissions
+  // Permissions (Benarkan juga Pentadbir & Pemilik sunting pautan walaupun telah diluluskan)
   const userCanApprove = canApproveProduct(user) && product.registrationStatus !== 'Diluluskan';
-  const userCanEdit = canEditProduct(user, product);
+  const userCanEdit =
+    canEditProduct(user, product) ||
+    canApproveProduct(user) ||
+    (user && user.uid === product.createdBy);
   const userCanAddAchievement = canSubmitAchievement(user, product);
   const userCanAddDoc = canUploadDocument(user, product);
+
+  // Kesan semua pautan yang mungkin telah dimasukkan oleh pengguna (Product URL, Demo URL, atau Thumbnail URL)
+  const primaryProductLink =
+    normalizeExternalUrl(product.productUrl) ||
+    normalizeExternalUrl(product.demoUrl) ||
+    normalizeExternalUrl(product.thumbnailUrl);
 
   // Handle Approve
   const handleApprove = () => {
@@ -173,7 +188,7 @@ export const ProductProfilePage: React.FC = () => {
                 onClick={() => navigate(`/pendaftaran-produk/${product.productId}/edit`)}
                 icon={<Edit className="w-3.5 h-3.5" />}
               >
-                Kemaskini Rekod
+                Kemaskini Rekod / Pautan
               </Button>
             )}
 
@@ -246,16 +261,27 @@ export const ProductProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {product.productUrl && (
+            {primaryProductLink ? (
               <a
-                href={product.productUrl}
+                href={primaryProductLink}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-primary text-xs bg-amber-500 hover:bg-amber-600 text-navy-950 font-bold shrink-0"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-amber-400 hover:bg-amber-500 text-navy-950 font-bold shrink-0 shadow-md transition-all"
               >
-                <span>Akses Produk Digital</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Buka Pautan Produk / e-Book</span>
+                <ExternalLink className="w-4 h-4" />
               </a>
+            ) : (
+              userCanEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/pendaftaran-produk/${product.productId}/edit`)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs bg-navy-800 hover:bg-navy-700 text-amber-300 border border-navy-600 font-semibold shrink-0 transition-all"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  <span>+ Tambah Pautan Produk / e-Book</span>
+                </button>
+              )
             )}
           </div>
         </div>
@@ -274,6 +300,90 @@ export const ProductProfilePage: React.FC = () => {
       {activeTab === 'ringkasan' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
+            {/* Kotak Pautan Akses Pantas Produk Digital */}
+            <Card>
+              <CardHeader
+                title="Pautan Akses Produk Digital / e-Book / Bahan Inovasi"
+                action={
+                  userCanEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/pendaftaran-produk/${product.productId}/edit`)}
+                      icon={<Edit className="w-3.5 h-3.5" />}
+                    >
+                      Kemas Kini Pautan
+                    </Button>
+                  )
+                }
+              />
+              <CardBody className="space-y-2.5 text-xs">
+                {primaryProductLink ? (
+                  <div className="space-y-2">
+                    {product.productUrl && (
+                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3">
+                        <div className="truncate">
+                          <span className="font-bold text-amber-950 block">Pautan Produk Digital:</span>
+                          <span className="text-amber-800 truncate block">{product.productUrl}</span>
+                        </div>
+                        <a
+                          href={normalizeExternalUrl(product.productUrl) || '#'}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-900 text-white font-semibold shrink-0"
+                        >
+                          <span>Buka Pautan</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+
+                    {product.demoUrl && (
+                      <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between gap-3">
+                        <div className="truncate">
+                          <span className="font-bold text-blue-950 block">Pautan Demo / Video / Repositori:</span>
+                          <span className="text-blue-800 truncate block">{product.demoUrl}</span>
+                        </div>
+                        <a
+                          href={normalizeExternalUrl(product.demoUrl) || '#'}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-900 text-white font-semibold shrink-0"
+                        >
+                          <span>Buka Demo</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+
+                    {product.thumbnailUrl && !product.productUrl && !product.demoUrl && (
+                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3">
+                        <div className="truncate">
+                          <span className="font-bold text-emerald-950 block">Pautan Bahan / Produk:</span>
+                          <span className="text-emerald-800 truncate block">{product.thumbnailUrl}</span>
+                        </div>
+                        <a
+                          href={normalizeExternalUrl(product.thumbnailUrl) || '#'}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-900 text-white font-semibold shrink-0"
+                        >
+                          <span>Buka Bahan</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-gray-50 border border-dashed border-gray-300 text-gray-600 flex items-center justify-between gap-3">
+                    <span>
+                      Tiada pautan URL produk digital dimasukkan lagi. Klik <strong>Kemas Kini Pautan</strong> (Bahagian E) untuk menambah pautan e-Book atau produk anda.
+                    </span>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
             <Card>
               <CardHeader title="Ringkasan Eksekutif" />
               <CardBody>
@@ -401,10 +511,19 @@ export const ProductProfilePage: React.FC = () => {
               </div>
             </div>
 
+            {product.productUrl && (
+              <div className="p-3 bg-amber-50/60 rounded-lg border border-amber-200 text-xs">
+                <strong>Pautan Produk Digital:</strong>{' '}
+                <a href={normalizeExternalUrl(product.productUrl) || '#'} target="_blank" rel="noreferrer" className="text-navy-700 underline font-medium">
+                  {product.productUrl}
+                </a>
+              </div>
+            )}
+
             {product.demoUrl && (
               <div className="p-3 bg-blue-50/60 rounded-lg border border-blue-200 text-xs">
                 <strong>Pautan Demo / Repositori:</strong>{' '}
-                <a href={product.demoUrl} target="_blank" rel="noreferrer" className="text-navy-700 underline font-medium">
+                <a href={normalizeExternalUrl(product.demoUrl) || '#'} target="_blank" rel="noreferrer" className="text-navy-700 underline font-medium">
                   {product.demoUrl}
                 </a>
               </div>
@@ -531,7 +650,7 @@ export const ProductProfilePage: React.FC = () => {
                     <div className="shrink-0 flex items-center gap-2">
                       {ach.referenceUrl && (
                         <a
-                          href={ach.referenceUrl}
+                          href={normalizeExternalUrl(ach.referenceUrl) || '#'}
                           target="_blank"
                           rel="noreferrer"
                           className="btn-secondary text-xs py-1"
@@ -607,7 +726,7 @@ export const ProductProfilePage: React.FC = () => {
             {documents.length === 0 ? (
               <EmptyState
                 title="Tiada Dokumen Dimuat Naik"
-                description="Muat naik fail sokongan seperti manual pengguna, kertas konsep, atau sijil dalam format PDF, DOCX, atau imej."
+                description="Muat naik fail sokongan seperti manual pengguna, kertas konsep, atau sijil dalam format PDF, DOCX, atau pautan Google Drive."
                 actionText={userCanAddDoc ? 'Muat Naik Dokumen Pertama' : undefined}
                 onAction={userCanAddDoc ? () => setShowDocumentModal(true) : undefined}
               />
@@ -615,6 +734,7 @@ export const ProductProfilePage: React.FC = () => {
               <div className="divide-y divide-gray-100">
                 {documents.map((doc) => {
                   const hasAccess = canViewDocument(user, doc);
+                  const isCloudLink = doc.fileUrl && (doc.fileUrl.startsWith('http://') || doc.fileUrl.startsWith('https://'));
                   return (
                     <div key={doc.documentId} className="py-3.5 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
@@ -630,7 +750,7 @@ export const ProductProfilePage: React.FC = () => {
                             </Badge>
                           </div>
                           <p className="text-xs text-gray-500 mt-0.5">
-                            {doc.originalFilename} • {formatFileSize(doc.fileSize)} • Dimuat naik oleh {doc.uploadedByName} pada {formatDateMs(doc.createdAt)}
+                            {doc.originalFilename} {isCloudLink ? '' : `• ${formatFileSize(doc.fileSize)}`} • Dimuat naik oleh {doc.uploadedByName} pada {formatDateMs(doc.createdAt)}
                           </p>
                         </div>
                       </div>
@@ -639,13 +759,13 @@ export const ProductProfilePage: React.FC = () => {
                         {hasAccess ? (
                           <a
                             href={doc.fileUrl}
-                            download={doc.originalFilename}
+                            download={isCloudLink ? undefined : doc.originalFilename}
                             target="_blank"
                             rel="noreferrer"
                             className="btn-secondary text-xs py-1"
                           >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Muat Turun</span>
+                            {isCloudLink ? <ExternalLink className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                            <span>{isCloudLink ? 'Buka Pautan' : 'Muat Turun'}</span>
                           </a>
                         ) : (
                           <span className="text-xs text-gray-400 italic">Akses Terhad</span>
