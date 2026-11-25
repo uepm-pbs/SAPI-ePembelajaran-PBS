@@ -1,15 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FolderArchive,
   Upload,
   Download,
   Search,
-  Filter,
   FileText,
   Lock,
   RotateCcw,
-  Eye,
+  ExternalLink,
 } from 'lucide-react';
 import { dbService } from '../../services/storage/databaseService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,6 +20,8 @@ import { formatDateMs } from '../../utils/dateFormatter';
 import { formatFileSize } from '../../utils/fileValidator';
 import { canViewDocument } from '../../utils/permissionHelper';
 import { DocumentUploadModal } from './DocumentUploadModal';
+
+const YEAR_OPTIONS = Array.from({ length: 2050 - 2018 + 1 }, (_, i) => 2018 + i);
 
 export const DocumentArchivePage: React.FC = () => {
   const { user } = useAuth();
@@ -111,10 +111,12 @@ export const DocumentArchivePage: React.FC = () => {
                 onChange={(e) => setSelectedYear(e.target.value)}
                 className="input-base text-xs py-1.5 w-auto"
               >
-                <option value="SEMUA">Semua Tahun</option>
-                <option value="2026">2026</option>
-                <option value="2025">2025</option>
-                <option value="2024">2024</option>
+                <option value="SEMUA">Semua Tahun (2018 - 2050)</option>
+                {YEAR_OPTIONS.map((yr) => (
+                  <option key={yr} value={String(yr)}>
+                    {yr}
+                  </option>
+                ))}
               </select>
 
               <Button
@@ -150,6 +152,7 @@ export const DocumentArchivePage: React.FC = () => {
             <div className="divide-y divide-gray-100">
               {documents.map((doc) => {
                 const canAccess = canViewDocument(user, doc);
+                const isCloudLink = doc.fileUrl && (doc.fileUrl.startsWith('http://') || doc.fileUrl.startsWith('https://'));
                 return (
                   <div
                     key={doc.documentId}
@@ -161,7 +164,7 @@ export const DocumentArchivePage: React.FC = () => {
                       </div>
 
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-bold text-sm text-gray-900">{doc.title}</h4>
                           <Badge variant="primary" size="sm">{doc.category}</Badge>
                           <Badge
@@ -179,7 +182,7 @@ export const DocumentArchivePage: React.FC = () => {
                         </div>
 
                         <p className="text-xs text-gray-500">
-                          {doc.originalFilename} • {formatFileSize(doc.fileSize)} • Tahun {doc.reportingYear}
+                          {doc.originalFilename} {isCloudLink ? '' : `• ${formatFileSize(doc.fileSize)}`} • Tahun {doc.reportingYear}
                         </p>
 
                         {doc.productTitle && (
@@ -204,13 +207,22 @@ export const DocumentArchivePage: React.FC = () => {
                       {canAccess ? (
                         <a
                           href={doc.fileUrl}
-                          download={doc.originalFilename}
+                          download={isCloudLink ? undefined : doc.originalFilename}
                           target="_blank"
                           rel="noreferrer"
                           className="btn-secondary text-xs py-1.5"
                         >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Muat Turun Fail</span>
+                          {isCloudLink ? (
+                            <>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>Buka Pautan Cloud</span>
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Muat Turun Fail</span>
+                            </>
+                          )}
                         </a>
                       ) : (
                         <div className="flex items-center gap-1.5 text-xs text-amber-700 font-medium px-2.5 py-1 bg-amber-50 rounded-lg border border-amber-200">
