@@ -13,6 +13,7 @@ import {
   EyeOff,
   RotateCcw,
   CheckCircle2,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PBSLogo } from '../../components/institution/PBSBranding';
@@ -20,6 +21,7 @@ import { Button } from '../../components/common/Button';
 import { Alert } from '../../components/common/Alert';
 import { INITIAL_USERS } from '../../services/storage/initialData';
 import { dbService } from '../../services/storage/databaseService';
+import { UserGuideModal } from '../../components/layout/Sidebar';
 
 const PASSWORD_STORAGE_KEY = 'sapie_user_passwords_v1';
 const USERS_STORAGE_KEY = 'sapie_users_v1';
@@ -28,8 +30,9 @@ const DEFAULT_PASSWORD = 'password123';
 export const LoginPage: React.FC = () => {
   const { switchUserRoleForTesting, error } = useAuth();
   const navigate = useNavigate();
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
-  // Pastikan mana-mana pengguna baharu dalam INITIAL_USERS (seperti Pegawai MARO) dimasukkan ke dalam localStorage secara automatik
+  // Pastikan mana-mana pengguna baharu dalam INITIAL_USERS dimasukkan ke dalam localStorage secara automatik
   useEffect(() => {
     try {
       const currentUsers = dbService.getUsers();
@@ -53,7 +56,6 @@ export const LoginPage: React.FC = () => {
 
   const storedUsers = dbService.getUsers();
 
-  // Muatkan kata laluan setiap pengguna dari localStorage (default: password123)
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem(PASSWORD_STORAGE_KEY);
@@ -72,7 +74,6 @@ export const LoginPage: React.FC = () => {
     }
   });
 
-  // Nama boleh diedit untuk setiap peranan dalam panel RBAC
   const [userNames, setUserNames] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     INITIAL_USERS.forEach((u) => {
@@ -82,7 +83,6 @@ export const LoginPage: React.FC = () => {
     return map;
   });
 
-  // Email boleh diedit untuk setiap peranan dalam panel RBAC
   const [userEmails, setUserEmails] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     INITIAL_USERS.forEach((u) => {
@@ -100,12 +100,10 @@ export const LoginPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>('user-superadmin');
 
-  // State untuk panel Lupa / Tukar Kata Laluan
   const [showResetBox, setShowResetBox] = useState(false);
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
 
-  // Pilihan tambahan khas untuk Pensyarah (Jabatan & No. Staf)
   const [lecturerDept, setLecturerDept] = useState(() => {
     const existing = storedUsers.find((su) => su.uid === 'user-pensyarah-jkm');
     return existing?.departmentId || 'JKM';
@@ -161,7 +159,6 @@ export const LoginPage: React.FC = () => {
         return;
       }
 
-      // SEMAKAN KATA LALUAN KETAT
       const expectedPassword = userPasswords[targetUid] || DEFAULT_PASSWORD;
       if (password !== expectedPassword) {
         setLocalError(
@@ -293,9 +290,21 @@ export const LoginPage: React.FC = () => {
         <p className="mt-1 text-xs text-gray-500">
           Portal Rasmi Pengurusan & Pemeliharaan Inovasi Digital Pembelajaran
         </p>
+
+        {/* Butang Buka Buku Panduan Penggunaan */}
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-navy-50 hover:bg-navy-100 text-navy-800 border border-navy-200 text-xs font-semibold transition-all shadow-2xs"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-navy-700" />
+            <span>Baca Buku Panduan Penggunaan Sistem SAPIe</span>
+          </button>
+        </div>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="mt-5 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-xl border border-gray-200/80 rounded-2xl sm:px-10">
           {(error || localError) && (
             <div className="mb-4">
@@ -369,7 +378,6 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Kotak Reset / Tukar Kata Laluan */}
             {showResetBox && (
               <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-2.5 text-xs">
                 <div className="flex items-center gap-1.5 font-bold text-amber-900">
@@ -457,7 +465,6 @@ export const LoginPage: React.FC = () => {
                         : 'border-gray-200 hover:border-navy-300 hover:bg-gray-50')
                     }
                   >
-                    {/* Baris Atas: Label Peranan */}
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-navy-100 text-navy-800 whitespace-nowrap">
                         {formatRole(u.role)}
@@ -469,7 +476,6 @@ export const LoginPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Input Nama Penuh (Boleh Edit untuk Semua Peranan) */}
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                       <User className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
                       <input
@@ -482,7 +488,6 @@ export const LoginPage: React.FC = () => {
                       />
                     </div>
 
-                    {/* Input E-mel (Boleh Edit untuk Semua Peranan) */}
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                       <Mail className="w-3 h-3 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
                       <input
@@ -495,7 +500,6 @@ export const LoginPage: React.FC = () => {
                       />
                     </div>
 
-                    {/* Pilihan Jabatan & No. Staf Khas untuk Pensyarah */}
                     {isLecturerCard && isSelected && (
                       <div
                         className="grid grid-cols-2 gap-1.5 pt-1"
@@ -547,6 +551,8 @@ export const LoginPage: React.FC = () => {
           {' Politeknik Banting Selangor.'}
         </div>
       </div>
+
+      <UserGuideModal isOpen={showGuideModal} onClose={() => setShowGuideModal(false)} />
     </div>
   );
 };
