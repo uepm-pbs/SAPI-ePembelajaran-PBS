@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Link2, HardDrive } from 'lucide-react';
 import { documentUploadSchema, DocumentUploadFormData } from '../../schemas/documentSchema';
 import { dbService } from '../../services/storage/databaseService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,7 +26,9 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
   onSuccess,
 }) => {
   const { user } = useAuth();
+  const [uploadMode, setUploadMode] = useState<'file' | 'link'>('file');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [externalUrl, setExternalUrl] = useState<string>('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,8 +70,14 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
 
   const onSubmit = async (data: DocumentUploadFormData) => {
     if (!user) return;
-    if (!selectedFile) {
-      setValidationError('Sila pilih fail untuk dimuat naik.');
+
+    if (uploadMode === 'file' && !selectedFile) {
+      setValidationError('Sila pilih fail dari komputer untuk dimuat naik.');
+      return;
+    }
+
+    if (uploadMode === 'link' && !externalUrl.trim()) {
+      setValidationError('Sila masukkan pautan URL dokumen (contoh: Google Drive / OneDrive).');
       return;
     }
 
@@ -77,7 +85,17 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
     setValidationError(null);
 
     try {
-      dbService.uploadDocument(
+      let fileToUpload: File;
+
+      if (uploadMode === 'file' && selectedFile) {
+        fileToUpload = selectedFile;
+      } else {
+        // Cipta objek File maya untuk pautan Cloud
+        const safeName = (data.title || 'Dokumen_Cloud').replace(/[^a-zA-Z0-9_-]/g, '_') + ' (Pautan Cloud)';
+        fileToUpload = new File([externalUrl.trim()], safeName, { type: 'text/uri-list' });
+      }
+
+      const createdDoc = dbService.uploadDocument(
         {
           ...data,
           productId: data.productId || defaultProductId || '',
@@ -87,12 +105,31 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
           uploadedBy: user.uid,
           uploadedByName: user.fullName,
         },
-        selectedFile,
+        fileToUpload,
         user
       );
 
+      // Jika mod pautan Cloud, simpan URL sebenar ke dalam rekod dokumen
+      if (uploadMode === 'link' && createdDoc && createdDoc.documentId) {
+        try {
+          const rawDocs = localStorage.getItem('sapie_documents_v1');
+          if (rawDocs) {
+            const parsedDocs = JSON.parse(rawDocs);
+            const updatedDocs = parsedDocs.map((d: any) =>
+              d.documentId === createdDoc.documentId
+                ? { ...d, fileUrl: externalUrl.trim(), originalFilename: 'Pautan Storan Awan (Google Drive / Cloud)' }
+                : d
+            );
+            localStorage.setItem('sapie_documents_v1', JSON.stringify(updatedDocs));
+          }
+        } catch (e) {
+          console.error('Update link url error:', e);
+        }
+      }
+
       reset();
       setSelectedFile(null);
+      setExternalUrl('');
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -107,7 +144,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Muat Naik Dokumen Arkib"
-      subtitle={defaultProductTitle ? `Produk: ${defaultProductTitle}` : 'Tambah fail laporan atau manual ke dalam arkib'}
+      subtitle={defaultProductTitle ? `Produk: ${defaultProductTitle}` : 'Tambah fail laporan, manual atau pautan storan awan ke dalam arkib'}
       maxWidth="2xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -175,45 +212,99 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
           </div>
 
           <div>
-            <label className="label-base">Tahun Laporan</label>
+            <label className="label-base">Tahun Laporan (2018 - 2050)</label>
             <input
               type="number"
+              min={2018}
+              max={2050}
               className="input-base"
               {...register('reportingYear', { valueAsNumber: true })}
             />
           </div>
         </div>
 
-        {/* File Dropzone */}
+        {/* Pilihan Kaedah Muat Naik */}
         <div>
           <label className="label-base">
-            Fail Dokumen <span className="text-rose-500">*</span>
+            Kaedah Simpanan Dokumen <span className="text-rose-500">*</span>
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-navy-500 transition-colors bg-gray-50/50">
-            <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-            <div className="text-xs text-gray-600">
-              <label className="font-semibold text-navy-800 hover:text-navy-900 cursor-pointer underline">
-                <span>Pilih fail dari komputer</span>
-                <input
-                  type="file"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                  accept={allowedExtensions.join(',')}
-                />
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => {
+                setUploadMode('file');
+                setValidationError(null);
+              }}
+              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                uploadMode === 'file'
+                  ? 'bg-navy-800 text-white border-navy-800 shadow-xs'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <HardDrive className="w-4 h-4" />
+              <span>Fail Komputer (Maks {maxFileSizeMB} MB)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUploadMode('link');
+                setValidationError(null);
+              }}
+              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                uploadMode === 'link'
+                  ? 'bg-navy-800 text-white border-navy-800 shadow-xs'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <Link2 className="w-4 h-4" />
+              <span>Pautan Google Drive / Cloud (Tanpa Had Saiz)</span>
+            </button>
+          </div>
+
+          {uploadMode === 'file' ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-navy-500 transition-colors bg-gray-50/50">
+              <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+              <div className="text-xs text-gray-600">
+                <label className="font-semibold text-navy-800 hover:text-navy-900 cursor-pointer underline">
+                  <span>Pilih fail dari komputer</span>
+                  <input
+                    type="file"
+                    className="sr-only"
+                    onChange={handleFileChange}
+                    accept={allowedExtensions.join(',')}
+                  />
+                </label>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Format dibenarkan: {allowedExtensions.join(', ')} (Maksimum {maxFileSizeMB} MB setiap fail)
+                </p>
+              </div>
+              {selectedFile && (
+                <div className="mt-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center justify-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  <span>
+                    <strong>{selectedFile.name}</strong> ({formatFileSize(selectedFile.size)})
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-2">
+              <label className="text-xs font-semibold text-navy-900 block">
+                Pautan URL Google Drive / OneDrive / SharePoint / YouTube
               </label>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Format dibenarkan: {allowedExtensions.join(', ')} (Maksimum {maxFileSizeMB} MB)
+              <input
+                type="url"
+                value={externalUrl}
+                onChange={(e) => setExternalUrl(e.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className="input-base text-xs bg-white"
+              />
+              <p className="text-[11px] text-blue-800">
+                💡 Sesuai untuk fail bersaiz besar (melebihi {maxFileSizeMB} MB seperti video PdP penuh, fail ZIP SCORM atau folder dokumentasi). Tiada had kapasiti saiz!
               </p>
             </div>
-            {selectedFile && (
-              <div className="mt-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center justify-center gap-2">
-                <FileText className="w-4 h-4" />
-                <span>
-                  <strong>{selectedFile.name}</strong> ({formatFileSize(selectedFile.size)})
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         <div>
@@ -231,7 +322,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
             Batal
           </Button>
           <Button type="submit" loading={isSubmitting} icon={<Upload className="w-4 h-4" />}>
-            Muat Naik Dokumen
+            Simpan Dokumen Arkib
           </Button>
         </div>
       </form>
