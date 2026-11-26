@@ -19,12 +19,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PBSLogo } from '../../components/institution/PBSBranding';
 import { Button } from '../../components/common/Button';
 import { Alert } from '../../components/common/Alert';
-import { INITIAL_USERS } from '../../services/storage/initialData';
+import { INITIAL_USERS, INITIAL_PRODUCTS } from '../../services/storage/initialData';
 import { dbService } from '../../services/storage/databaseService';
 import { UserGuideModal } from '../../components/layout/Sidebar';
 
 const PASSWORD_STORAGE_KEY = 'sapie_user_passwords_v1';
 const USERS_STORAGE_KEY = 'sapie_users_v1';
+const PRODUCTS_STORAGE_KEY = 'sapie_products_v1';
+const COUNTERS_STORAGE_KEY = 'sapie_counters_v1';
 const DEFAULT_PASSWORD = 'password123';
 
 export const LoginPage: React.FC = () => {
@@ -32,9 +34,10 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [showGuideModal, setShowGuideModal] = useState(false);
 
-  // Pastikan mana-mana pengguna baharu dalam INITIAL_USERS dimasukkan ke dalam localStorage secara automatik
+  // Auto-Sync Pengguna Baharu & Produk Rasmi ke dalam LocalStorage di Semua Komputer
   useEffect(() => {
     try {
+      // 1. Sync Users
       const currentUsers = dbService.getUsers();
       let hasNewUser = false;
       const mergedUsers = [...currentUsers];
@@ -49,8 +52,51 @@ export const LoginPage: React.FC = () => {
       if (hasNewUser) {
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(mergedUsers));
       }
+
+      // 2. Sync Initial Official Products (Supaya komputer lain terus nampak bahan inovasi yang didaftarkan)
+      const rawProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      const currentProducts: any[] = rawProducts ? JSON.parse(rawProducts) : [];
+      let productsChanged = false;
+      const mergedProducts = [...currentProducts];
+
+      INITIAL_PRODUCTS.forEach((initProd) => {
+        const existingIdx = mergedProducts.findIndex(
+          (p) => p.productId === initProd.productId || p.archiveCode === initProd.archiveCode
+        );
+        if (existingIdx === -1) {
+          mergedProducts.push(initProd);
+          productsChanged = true;
+        } else {
+          // Kemas kini pautan dan nama jabatan JPP jika produk sudah wujud
+          const existing = mergedProducts[existingIdx];
+          if (
+            (!existing.productUrl && initProd.productUrl) ||
+            existing.departmentName === 'Jabatan Kejuruteraan Penyelenggaraan Pesawat'
+          ) {
+            mergedProducts[existingIdx] = {
+              ...existing,
+              productUrl: existing.productUrl || initProd.productUrl,
+              demoUrl: existing.demoUrl || initProd.demoUrl,
+              departmentName:
+                existing.departmentId === 'JPP' ? 'Jabatan Penyenggaraan Pesawat' : existing.departmentName,
+            };
+            productsChanged = true;
+          }
+        }
+      });
+
+      if (productsChanged) {
+        localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(mergedProducts));
+        // Pastikan counter 2026 sekurang-kurangnya mengikut bilangan produk
+        const rawCounters = localStorage.getItem(COUNTERS_STORAGE_KEY);
+        const counters = rawCounters ? JSON.parse(rawCounters) : {};
+        if (!counters['2026'] || counters['2026'] < INITIAL_PRODUCTS.length) {
+          counters['2026'] = Math.max(mergedProducts.length, INITIAL_PRODUCTS.length);
+          localStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify(counters));
+        }
+      }
     } catch (e) {
-      console.error('Sync users error:', e);
+      console.error('Sync initial data error:', e);
     }
   }, []);
 
