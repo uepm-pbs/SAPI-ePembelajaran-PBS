@@ -20,7 +20,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = 'sapie_current_user_uid';
+const AUTH_SESSION_KEY = 'sapie_active_session_uid';
+const LEGACY_AUTH_STORAGE_KEY = 'sapie_current_user_uid';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -28,7 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If Firebase is configured and live, listen to Firebase Auth state
+    // Buang kunci auto-login lama dari localStorage supaya pengguna baru/tab baru sentiasa ke skrin Login dahulu
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
+
     if (isFirebaseConfigured && firebaseAuth) {
       const unsubscribe = onAuthStateChanged(firebaseAuth, async (fbUser) => {
         if (fbUser) {
@@ -49,27 +52,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return () => unsubscribe();
     } else {
-      // Local persistent mode: check saved active user session
-      const savedUid = localStorage.getItem(AUTH_STORAGE_KEY);
+      // Gunakan sessionStorage: hanya kekal jika pengguna sudah log masuk dalam tab semasa.
+      // Jika baru buka pautan laman web, user = null -> automatik dibawa ke paparan /login dahulu!
+      const savedUid = sessionStorage.getItem(AUTH_SESSION_KEY);
       if (savedUid) {
         const found = dbService.getUserById(savedUid);
         if (found && found.active) {
           setUser(found);
         } else {
-          // Default to Super Admin so institutional testing starts smoothly
-          const defaultAdmin = dbService.getUsers()[0];
-          if (defaultAdmin) {
-            setUser(defaultAdmin);
-            localStorage.setItem(AUTH_STORAGE_KEY, defaultAdmin.uid);
-          }
+          sessionStorage.removeItem(AUTH_SESSION_KEY);
+          setUser(null);
         }
       } else {
-        // First visit: select default Super Admin
-        const defaultAdmin = dbService.getUsers()[0];
-        if (defaultAdmin) {
-          setUser(defaultAdmin);
-          localStorage.setItem(AUTH_STORAGE_KEY, defaultAdmin.uid);
-        }
+        setUser(null);
       }
       setLoading(false);
     }
@@ -85,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile = dbService.getUserByEmail(email);
         if (profile) setUser(profile);
       } else {
-        // Persistent database authentication
         const foundUser = dbService.getUserByEmail(email);
         if (!foundUser) {
           setError('Alamat e-mel tidak berdaftar dalam sistem SAPIe.');
@@ -100,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setUser(foundUser);
-        localStorage.setItem(AUTH_STORAGE_KEY, foundUser.uid);
+        sessionStorage.setItem(AUTH_SESSION_KEY, foundUser.uid);
 
         dbService.createAuditLog({
           actorUid: foundUser.uid,
@@ -142,16 +136,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await firebaseSignOut(firebaseAuth);
     }
 
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
     setUser(null);
   };
 
-  // Switch role seamlessly for testing all 5 roles requested
   const switchUserRoleForTesting = (uid: string) => {
     const target = dbService.getUserById(uid);
     if (target) {
       setUser(target);
-      localStorage.setItem(AUTH_STORAGE_KEY, target.uid);
+      sessionStorage.setItem(AUTH_SESSION_KEY, target.uid);
       dbService.createAuditLog({
         actorUid: target.uid,
         actorName: target.fullName,
@@ -160,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         entityType: 'Auth',
         entityIdentifier: target.email,
         outcome: 'Berjaya',
-        details: `Tukar sesi aktif kepada: ${target.fullName} (${target.role})`,
+        details: `Log masuk ke sistem SAPIe: ${target.fullName} (${target.role})`,
       });
     }
   };
